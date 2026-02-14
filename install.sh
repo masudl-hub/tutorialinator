@@ -195,6 +195,9 @@ fi
 if [ -n "$SCRIPT_DIR" ] && [ -f "$SCRIPT_DIR/skill/SKILL.md" ]; then
     SOURCE_DIR="$SCRIPT_DIR/skill"
     step_line "$S_DONE" "$GREEN" "Source Files" 100 "Local repo: $SCRIPT_DIR"
+elif [ -n "$SCRIPT_DIR" ] && [ -f "$SCRIPT_DIR/SKILL.md" ]; then
+    SOURCE_DIR="$SCRIPT_DIR"
+    step_line "$S_DONE" "$GREEN" "Source Files" 100 "Local repo: $SCRIPT_DIR"
 else
     step_line "$S_ACTIVE" "$CYAN" "Source Files" 20 "Cloning repository..."
     TEMP_CLONE="$(mktemp -d)"
@@ -204,9 +207,13 @@ else
     git clone --depth 1 https://github.com/masudl-hub/tutorialinator.git "$TEMP_CLONE" 2>&1 | while read -r line; do
         echo -e "       ${DIM}$line${NC}"
     done
-    SOURCE_DIR="$TEMP_CLONE/skill"
-    if [ ! -f "$SOURCE_DIR/SKILL.md" ]; then
-        die "Clone succeeded but skill/SKILL.md not found. Repo may be malformed."
+    # Support both repo layouts: skill/ subdirectory or flat root
+    if [ -f "$TEMP_CLONE/skill/SKILL.md" ]; then
+        SOURCE_DIR="$TEMP_CLONE/skill"
+    elif [ -f "$TEMP_CLONE/SKILL.md" ]; then
+        SOURCE_DIR="$TEMP_CLONE"
+    else
+        die "Clone succeeded but SKILL.md not found. Repo may be malformed."
     fi
     step_line "$S_DONE" "$GREEN" "Source Files" 100 "Downloaded to temp directory"
 fi

@@ -319,7 +319,6 @@ mkdir -p "$SKILL_DEST/mcp-server/mcp_video_tutorial"
 step_line "$S_ACTIVE" "$CYAN" "Skill Files" 40 "Copying SKILL.md, templates..."
 
 cp "$SOURCE_DIR/SKILL.md"                          "$SKILL_DEST/SKILL.md"
-cp "$SOURCE_DIR/NON_VIDEO_MODES.md"                "$SKILL_DEST/NON_VIDEO_MODES.md"
 cp "$SOURCE_DIR/auto-setup.sh"                     "$SKILL_DEST/auto-setup.sh"
 cp "$SOURCE_DIR/templates/README.md"               "$SKILL_DEST/templates/README.md"
 cp "$SOURCE_DIR/templates/DESIGN_UPDATES.md"       "$SKILL_DEST/templates/DESIGN_UPDATES.md"

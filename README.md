@@ -152,7 +152,6 @@ Optional enhanced: `whisper-timestamped`, `rapidocr-onnxruntime`, `opencv-python
   ~/.claude/
   ├── skills/tutorialinator/           ← Skill files
   │   ├── SKILL.md                     ← Main specification (~1275 lines)
-  │   ├── NON_VIDEO_MODES.md           ← Topic/Research/Deep Research modes
   │   ├── auto-setup.sh                ← Health check script
   │   ├── .mcp.json                    ← MCP server configuration
   │   ├── templates/

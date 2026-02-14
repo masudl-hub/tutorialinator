@@ -205,26 +205,45 @@ flowchart TD
 ### Tutorial Generation
 
 ```mermaid
-flowchart LR
-    A["/tutorialinator"] --> B{Mode Detection}
-    B -->|"Video path"| C["[V] Video Mode"]
-    B -->|"URLs"| D["[R] Research Mode"]
-    B -->|"deep dive keyword"| E["[D] Deep Research"]
-    B -->|"Topic text"| F["[T] Topic Mode"]
+flowchart TD
+    A["/tutorialinator input"] --> B["auto-setup.sh\n(verify venv, MCP, Playwright)"]
+    B --> C{Mode Detection}
 
-    C --> G["MCP → transcribe\n+ scenes + frames"]
-    D --> H["Fetch URLs\n+ synthesize"]
-    E --> I["Web search\n+ analyze"]
-    F --> J["Claude knowledge\n+ structure"]
+    C -->|"Video file path"| V1["[V] Video Mode"]
+    C -->|"URL(s) in input"| R1["[R] Research Mode"]
+    C -->|"'deep dive' keyword"| D1["[D] Deep Research"]
+    C -->|"Topic string"| T1["[T] Topic Mode"]
 
-    G --> K["Generate HTML"]
-    H --> K
-    I --> K
-    J --> K
+    V1 --> V2["MCP: transcribe_with_timestamps\ndetect_scenes · extract_key_frames"]
+    V2 --> V3["MCP: detect_code_in_frames\ngenerate_chapters"]
+    V3 --> V4["Map video chapters → tutorial chapters\nExtract code examples from frames"]
 
-    K --> L["Playwright\nvalidation"]
-    L --> M["~/topic-tutorial/\nsrc/tutorial.html"]
+    R1 --> R2["Fetch each URL\nParse content"]
+    R2 --> R3["Identify themes, gaps,\nbest examples"]
+
+    D1 --> D2["Plan search queries\n(5–15 sources)"]
+    D2 --> D3["Web search + fetch\nFilter by quality"]
+    D3 --> D4["Build concept map\nIdentify misconceptions"]
+
+    T1 --> T2["Analyze topic scope\nPrereqs + core concepts"]
+    T2 --> T3["Plan 3–5 chapters\nProgressive difficulty"]
+
+    V4 --> LD["Learning Design Phase\n(per chapter: objectives → sequence\n→ widget selection → assessment)"]
+    R3 --> LD
+    D4 --> LD
+    T3 --> LD
+
+    LD --> PR["Pedagogical Review\n(Bloom's taxonomy check,\ncontent ≥ 2× challenges)"]
+
+    PR --> GEN["Phased HTML Generation\n(CSS + Ch1 → Ch2 → Ch3 → JS)\nSingle self-contained file"]
+
+    GEN --> E2E["Playwright E2E Validation\n6 phases: load → nav → widgets\n→ XP → keyboard → console"]
+    E2E -->|"Errors found"| FIX["Fix & re-validate"]
+    FIX --> E2E
+    E2E -->|"All pass"| OUT["~/topic-tutorial/\nsrc/tutorial.html"]
 ```
+
+> **Note — Agent Teams (recommended):** For complex tutorials, the skill can spawn agent teams — parallel researchers, content writers, and reviewers that collaborate before final HTML generation. Teams provide deeper research (dedicated agents explore more sources), better quality (separate review agent catches learning design gaps), and smarter context management (heavy research doesn't eat into the HTML generation budget). This requires **Claude Code agent teams** to be enabled. The skill works without them, but produces deeper tutorials with teams on.
 
 ### Architecture
 

@@ -811,6 +811,8 @@ Trust your judgment on team size and shape. There's no fixed formula — a color
 
 **One rule: you author the final HTML file.** Agents contribute research, content drafts, fact-checks, and feedback — but the single output file comes from one coherent vision.
 
+**If agent teams are unavailable:** The skill works without teams — all research, content design, and review steps run sequentially in a single agent. Teams provide three advantages beyond speed: (1) **depth** — dedicated research agents can explore more sources without rushing to move forward, (2) **review quality** — a separate pedagogical review agent catches learning design gaps the author is blind to, and (3) **context isolation** — each agent has its own context window, so heavy research doesn't eat into the HTML generation budget. Without teams, the single agent handles everything but may produce shallower research and skip self-review. If a team spawn fails, fall back to doing the work yourself without notifying the user of a problem.
+
 ### Pedagogical Review Agent (RECOMMENDED)
 
 After the Learning Design phase produces the chapter plan and before HTML generation begins, spawn a **pedagogical review agent** to audit the content plan. This agent's job is to catch learning design gaps that a design-focused workflow naturally creates. The agent should review the plan and flag:

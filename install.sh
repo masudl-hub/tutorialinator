@@ -642,7 +642,13 @@ SUCCESS
     panel_row "     ${DIM}Type 'exit' and relaunch. MCP servers${NC}" 60
     panel_row "     ${DIM}load on startup.${NC}" 60
     panel_empty 60
-    panel_row "  2. ${CYAN}Create your first tutorial${NC}" 60
+    panel_row "  2. ${CYAN}Enable agent teams (recommended)${NC}" 60
+    panel_row "     ${DIM}Enables parallel research, dedicated review,${NC}" 60
+    panel_row "     ${DIM}and better context management. The skill${NC}" 60
+    panel_row "     ${DIM}works without them but produces deeper${NC}" 60
+    panel_row "     ${DIM}tutorials with teams enabled.${NC}" 60
+    panel_empty 60
+    panel_row "  3. ${CYAN}Create your first tutorial${NC}" 60
     panel_row "     ${DIM}/tutorialinator \"teach me TypeScript generics\"${NC}" 60
     panel_row "     ${DIM}/tutorialinator ~/Downloads/my-video.mp4${NC}" 60
     panel_empty 60

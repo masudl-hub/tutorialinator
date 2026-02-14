@@ -30,7 +30,7 @@
                                  │
                             ╔════╧════╗
                             ║   AI    ║
-                            ║  ⚡⚡⚡  ║
+                            ║  ⚡⚡⚡⚡   ║
                             ╚════╤════╝
                                  │
                           ┌──────┴──────┐
@@ -265,7 +265,7 @@ graph TB
 ```
 
 ```
-  ╭──────────────── Supported Input Modes ────────────────╮
+  ╭──────────────── Supported Input Modes ─────────────────╮
   │                                                        │
   │  Mode             Description                          │
   │  ─────────────────────────────────────────────         │
@@ -325,7 +325,7 @@ Open it in any browser. No server needed.
 The installer lets you choose between two Whisper models for video transcription:
 
 ```
-  ╭──────────────── Whisper Model Selection ──────────────╮
+  ╭──────────────── Whisper Model Selection ───────────────╮
   │                                                        │
   │  Model    Size       Speed     Accuracy    Best for    │
   │  ──────────────────────────────────────────────────    │
@@ -447,7 +447,7 @@ bash <(curl -fsSL https://raw.githubusercontent.com/masudl-hub/tutorialinator/ma
 ```
 
 ```
-  ╭──────────────── What gets removed ────────────────────╮
+  ╭──────────────── What gets removed ─────────────────────╮
   │                                                        │
   │  ✓  ~/.claude/skills/tutorialinator/    Always         │
   │  ?  ~/.cache/whisper/                   Asks first     │

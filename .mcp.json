@@ -1,0 +1,21 @@
+{
+  "mcpServers": {
+    "tutorialinator": {
+      "command": "/Users/masud/.claude/skills/tutorialinator/mcp-server/venv/bin/python",
+      "args": [
+        "-m",
+        "mcp_video_tutorial.server"
+      ],
+      "cwd": "/Users/masud/.claude/skills/tutorialinator/mcp-server"
+    },
+    "playwright": {
+      "command": "npx",
+      "args": [
+        "--yes",
+        "@playwright/mcp@latest",
+        "--headless",
+        "--allow-unrestricted-file-access"
+      ]
+    }
+  }
+}

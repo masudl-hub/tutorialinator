@@ -1,0 +1,14 @@
+# Virtual environment
+mcp-server/venv/
+
+# Python egg-info (auto-generated)
+mcp-server/*.egg-info/
+mcp-server/mcp_video_tutorial.egg-info/
+
+# Python bytecode
+__pycache__/
+*.pyc
+*.pyo
+
+# OS files
+.DS_Store

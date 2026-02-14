@@ -40,13 +40,55 @@ elif ! "$MCP_DIR/venv/bin/python" -c "import mcp; import whisper; import fastmcp
 fi
 
 if [ $NEEDS_INSTALL -eq 1 ]; then
-    echo -e "${CYAN}→${NC} Running video tools installation..."
+    echo -e "${CYAN}→${NC} Rebuilding video tools environment..."
     echo ""
+
+    # Find Python 3.10+
+    PYTHON_CMD=""
+    for cmd in python3.14 python3.13 python3.12 python3.11 python3.10 python3; do
+        if command -v "$cmd" &>/dev/null; then
+            ver=$("$cmd" --version 2>&1 | grep -oE '[0-9]+\.[0-9]+' | head -1)
+            major=$(echo "$ver" | cut -d. -f1)
+            minor=$(echo "$ver" | cut -d. -f2)
+            if [ "$major" -ge 3 ] && [ "$minor" -ge 10 ]; then
+                PYTHON_CMD="$cmd"
+                break
+            fi
+        fi
+    done
+
+    if [ -z "$PYTHON_CMD" ]; then
+        echo -e "${RED}✗${NC} Python 3.10+ not found. Please install Python first:"
+        echo "   macOS:  brew install python@3.12"
+        echo "   Linux:  sudo apt install python3.12 python3.12-venv"
+        exit 1
+    fi
+
+    # Remove broken venv if it exists
+    [ -d "$MCP_DIR/venv" ] && rm -rf "$MCP_DIR/venv"
+
+    # Create fresh venv and install
+    echo -e "${CYAN}→${NC} Creating virtual environment with $PYTHON_CMD..."
+    "$PYTHON_CMD" -m venv "$MCP_DIR/venv"
+    "$MCP_DIR/venv/bin/pip" install --upgrade pip --quiet
+
+    echo -e "${CYAN}→${NC} Installing dependencies..."
     cd "$MCP_DIR"
-    ./install.sh
-    if [ $? -ne 0 ]; then
-        echo ""
+    if "$MCP_DIR/venv/bin/pip" install -e ".[enhanced]" --quiet 2>&1; then
+        echo -e "${GREEN}✓${NC} Enhanced dependencies installed"
+    elif "$MCP_DIR/venv/bin/pip" install -e "." --quiet 2>&1; then
+        echo -e "${YELLOW}⚠${NC}  Core dependencies installed (enhanced features unavailable)"
+    else
         echo -e "${RED}✗${NC} Video tools installation failed!"
+        echo "   Try running: cd $MCP_DIR && $PYTHON_CMD -m venv venv && venv/bin/pip install -e ."
+        exit 1
+    fi
+
+    # Verify install
+    if "$MCP_DIR/venv/bin/python" -c "import mcp; import whisper" &>/dev/null; then
+        echo -e "${GREEN}✓${NC} Dependencies verified"
+    else
+        echo -e "${RED}✗${NC} Installation verification failed!"
         exit 1
     fi
     echo ""
@@ -74,8 +116,15 @@ else
     npx --yes @playwright/mcp@latest --version
 fi
 
+# Playwright cache location is OS-dependent
+if [[ "$(uname)" == "Darwin" ]]; then
+    PLAYWRIGHT_CACHE="$HOME/Library/Caches/ms-playwright"
+else
+    PLAYWRIGHT_CACHE="$HOME/.cache/ms-playwright"
+fi
+
 # Check if Chromium browser is installed
-if [ -d "$HOME/Library/Caches/ms-playwright" ] && ls "$HOME/Library/Caches/ms-playwright/" | grep -q "chromium"; then
+if [ -d "$PLAYWRIGHT_CACHE" ] && ls "$PLAYWRIGHT_CACHE/" 2>/dev/null | grep -q "chromium"; then
     echo -e "${GREEN}✓${NC} Chromium browser installed"
 else
     echo -e "${CYAN}→${NC} Installing Chromium browser for validation..."
@@ -88,7 +137,7 @@ else
         npx playwright install chromium 2>&1
     )
     rm -rf "$TMPDIR"
-    if [ -d "$HOME/Library/Caches/ms-playwright" ] && ls "$HOME/Library/Caches/ms-playwright/" | grep -q "chromium"; then
+    if [ -d "$PLAYWRIGHT_CACHE" ] && ls "$PLAYWRIGHT_CACHE/" 2>/dev/null | grep -q "chromium"; then
         echo -e "${GREEN}✓${NC} Chromium browser installed"
     else
         echo -e "${YELLOW}⚠${NC}  Chromium install may have failed — Playwright validation will use fallback"

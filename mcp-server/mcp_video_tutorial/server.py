@@ -7,16 +7,14 @@ Provides video analysis capabilities for the video-to-tutorial workflow.
 import os
 import json
 import subprocess
-import tempfile
 from pathlib import Path
 from typing import Optional, Any
-from datetime import datetime
 
 from mcp.server.fastmcp import FastMCP
 import whisper
 
 # Initialize FastMCP server
-mcp = FastMCP("video-tutorial")
+mcp = FastMCP("tutorialinator")
 
 
 def resolve_video_path(video_path: str) -> Path:
@@ -58,10 +56,21 @@ CACHE_DIR.mkdir(parents=True, exist_ok=True)
 WHISPER_MODEL_SIZE = os.getenv("WHISPER_MODEL_SIZE", "base")
 WHISPER_DEVICE = os.getenv("WHISPER_DEVICE", "cpu")
 
-# Load Whisper model once at startup
-print(f"Loading Whisper model: {WHISPER_MODEL_SIZE}")
-whisper_model = whisper.load_model(WHISPER_MODEL_SIZE, device=WHISPER_DEVICE)
-print("Whisper model loaded successfully")
+# Load Whisper model lazily on first use
+whisper_model = None
+
+def get_whisper_model():
+    global whisper_model
+    if whisper_model is None:
+        try:
+            print(f"Loading Whisper model: {WHISPER_MODEL_SIZE}")
+            whisper_model = whisper.load_model(WHISPER_MODEL_SIZE, device=WHISPER_DEVICE)
+            print("Whisper model loaded successfully")
+        except Exception as e:
+            print(f"Warning: Failed to load Whisper model: {e}")
+            print("Transcription will not be available. Run auto-setup.sh to fix.")
+            raise
+    return whisper_model
 
 
 @mcp.tool()
@@ -162,7 +171,7 @@ def transcribe_with_timestamps(
         if use_enhanced:
             audio = whisper_ts.load_audio(str(video_path))
             result = whisper_ts.transcribe(
-                whisper_model,
+                get_whisper_model(),
                 audio,
                 language=None if language == "auto" else language
             )
@@ -179,7 +188,7 @@ def transcribe_with_timestamps(
                     })
         else:
             # Fallback to standard Whisper (segment-level only)
-            result = whisper_model.transcribe(
+            result = get_whisper_model().transcribe(
                 str(video_path),
                 language=None if language == "auto" else language
             )
@@ -574,7 +583,7 @@ def get_video_metadata(video_path: str) -> dict[str, Any]:
                 "video_codec": video_stream.get("codec_name"),
                 "width": video_stream.get("width"),
                 "height": video_stream.get("height"),
-                "fps": eval(video_stream.get("r_frame_rate", "0/1")),
+                "fps": (lambda r: int(r.split("/")[0]) / int(r.split("/")[1]) if "/" in r and int(r.split("/")[1]) != 0 else float(r) if r else 0)(video_stream.get("r_frame_rate", "0")),
                 "resolution": f"{video_stream.get('width')}x{video_stream.get('height')}"
             })
 

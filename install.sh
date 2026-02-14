@@ -472,7 +472,11 @@ else
 fi
 
 # Install Chromium browser
-PLAYWRIGHT_CACHE="$HOME/Library/Caches/ms-playwright"
+if [[ "$(uname)" == "Darwin" ]]; then
+    PLAYWRIGHT_CACHE="$HOME/Library/Caches/ms-playwright"
+else
+    PLAYWRIGHT_CACHE="$HOME/.cache/ms-playwright"
+fi
 if [ -d "$PLAYWRIGHT_CACHE" ] && ls "$PLAYWRIGHT_CACHE/" 2>/dev/null | grep -q "chromium"; then
     step_line "$S_DONE" "$GREEN" "Playwright" 100 "Chromium already installed"
 else

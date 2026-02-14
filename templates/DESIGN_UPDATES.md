@@ -25,7 +25,4 @@ The tutorialinator has been completely redesigned with the V3 design system — 
 9. **Cursor Glow** — 300px radial gradient following mouse with eased interpolation
 10. **Staggered Animations** — Section children reveal in sequence (tag → h2 → body → card)
 
-### Reference Implementation
-`/Users/masud/hex-code-tutorial/src/demo-v3.html`
-
 See SKILL.md for the complete specification.

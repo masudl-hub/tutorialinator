@@ -389,6 +389,12 @@ if ! "$VENV_DIR/bin/python" -c "import rapidocr_onnxruntime" &>/dev/null; then
         echo -ne "\r  ${CYAN}${S_ACTIVE}${NC}  Dependencies             ███████░░░  70%  ${DIM}${line:0:40}${NC}  \033[K"
     done
     echo ""
+    # Verify core install succeeded
+    if ! "$VENV_DIR/bin/python" -c "import mcp; import whisper" &>/dev/null; then
+        step_line "$S_FAIL" "$RED" "Dependencies" 0 "Core install failed — check Python version and try manually"
+        echo "   Try: cd $MCP_DIR && $PYTHON_CMD -m venv venv && venv/bin/pip install -e ."
+        exit 1
+    fi
 fi
 
 if [ "$ENHANCED_OK" = true ]; then

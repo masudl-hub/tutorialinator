@@ -880,7 +880,7 @@ After completing this for all chapters, run the **Pedagogical Review Agent** (se
 
 **IMPORTANT**: Pass the video file path directly to MCP tools as-is, even if it contains spaces. Do NOT copy, move, or rename the file. The MCP tools handle spaces natively.
 
-1. **Video Analysis** — Use MCP video tools (pass original file path with spaces quoted) to extract transcript, chapter markers, code from frames
+1. **Video Analysis** — Use MCP video tools (pass original file path with spaces quoted) to extract transcript, chapter markers, code from frames. Available tools: `download_video`, `transcribe_with_timestamps`, `detect_scenes`, `extract_key_frames`, `detect_code_in_frames`, `generate_chapters`, `get_video_metadata`
 2. **Content Structuring** — Map video chapters to tutorial chapters, identify code examples, design quizzes
 3. **Learning Design** — Complete the Learning Design Phase (above) for each chapter
 4. **Pedagogical Review** — Run the pedagogical review agent on the chapter plan

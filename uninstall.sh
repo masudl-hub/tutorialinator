@@ -152,7 +152,8 @@ fi
 # ─────────────────────────────────────────────────────────────────────────────
 
 if [ -f "$SETTINGS_FILE" ]; then
-    if python3 -c "
+    if command -v python3 &>/dev/null; then
+        if python3 -c "
 import json, sys
 with open('$SETTINGS_FILE') as f:
     data = json.load(f)
@@ -165,7 +166,14 @@ if 'enableAllProjectMcpServers' in data:
 else:
     print('not present')
 " 2>/dev/null; then
-        step_line "$S_DONE" "$GREEN" "settings.json" "Cleaned enableAllProjectMcpServers"
+            step_line "$S_DONE" "$GREEN" "settings.json" "Cleaned enableAllProjectMcpServers"
+        fi
+    elif command -v sed &>/dev/null; then
+        # Fallback: use sed if python3 is unavailable
+        sed -i.bak '/"enableAllProjectMcpServers"/d' "$SETTINGS_FILE" 2>/dev/null && rm -f "${SETTINGS_FILE}.bak"
+        step_line "$S_DONE" "$GREEN" "settings.json" "Cleaned enableAllProjectMcpServers (via sed)"
+    else
+        step_line "$S_WARN" "$YELLOW" "settings.json" "Could not clean — remove enableAllProjectMcpServers manually"
     fi
 fi
 

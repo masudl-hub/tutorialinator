@@ -268,6 +268,67 @@ else
     die "Node.js + npx not found. Install: brew install node (macOS) or see https://nodejs.org"
 fi
 
+# Claude Code — the host platform (everything else is pointless without it)
+if command -v claude &>/dev/null; then
+    CLAUDE_VER=$(claude --version 2>/dev/null || echo "unknown")
+    panel_row "Claude Code $CLAUDE_VER ${GREEN}${S_DONE}${NC}    Host platform" 60
+else
+    panel_row "Claude Code      ${YELLOW}${S_WARN}${NC}         Not found" 60
+    panel_bottom 60
+    echo ""
+    if is_interactive; then
+        panel_top "Claude Code Required" 60
+        panel_empty 60
+        panel_row "Claude Code is the AI coding assistant that runs" 60
+        panel_row "this skill. The tutorialinator is a Claude Code" 60
+        panel_row "skill — it needs Claude Code to work." 60
+        panel_empty 60
+        panel_row "  1. ${GREEN}Install now${NC}  ${DIM}(npm install -g @anthropic-ai/claude-code)${NC}" 60
+        panel_row "  2. ${RED}Exit${NC}          ${DIM}I'll install it myself${NC}" 60
+        panel_empty 60
+        panel_bottom 60
+        echo ""
+        echo -ne "  ${BOLD}Select${NC} [${DIM}1${NC}]: "
+        read -r claude_choice
+        echo ""
+        if [ "$claude_choice" != "2" ]; then
+            step_line "$S_ACTIVE" "$CYAN" "Claude Code" 30 "npm install -g @anthropic-ai/claude-code..."
+            if npm install -g @anthropic-ai/claude-code 2>&1 | tail -5; then
+                step_line "$S_DONE" "$GREEN" "Claude Code" 100 "Installed"
+            else
+                step_line "$S_FAIL" "$RED" "Claude Code" 50 "npm install failed"
+                echo ""
+                echo -e "  ${YELLOW}Try manually:${NC} npm install -g @anthropic-ai/claude-code"
+                echo -e "  ${DIM}You may need: sudo npm install -g @anthropic-ai/claude-code${NC}"
+                echo ""
+                die "Claude Code is required. Install it first, then re-run this installer."
+            fi
+        else
+            echo -e "  ${DIM}Install Claude Code, then re-run this installer:${NC}"
+            echo -e "  ${CYAN}npm install -g @anthropic-ai/claude-code${NC}"
+            echo ""
+            exit 0
+        fi
+        echo ""
+        panel_top "System Check (continued)" 60
+    else
+        # Non-interactive (curl|bash) — try to install automatically
+        step_line "$S_ACTIVE" "$CYAN" "Claude Code" 30 "Auto-installing via npm..."
+        if npm install -g @anthropic-ai/claude-code 2>&1 | tail -5; then
+            step_line "$S_DONE" "$GREEN" "Claude Code" 100 "Installed"
+        else
+            step_line "$S_FAIL" "$RED" "Claude Code" 50 "Auto-install failed"
+            echo ""
+            echo -e "  ${YELLOW}Install Claude Code manually, then re-run:${NC}"
+            echo -e "  ${CYAN}npm install -g @anthropic-ai/claude-code${NC}"
+            echo ""
+            die "Claude Code is required."
+        fi
+        echo ""
+        panel_top "System Check (continued)" 60
+    fi
+fi
+
 # FFmpeg (self-heal on macOS)
 if command -v ffmpeg &>/dev/null; then
     FF_VER=$(ffmpeg -version 2>&1 | head -1 | awk '{print $3}' || echo "unknown")

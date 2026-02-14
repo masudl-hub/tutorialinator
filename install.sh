@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -euo pipefail
+set -u
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Tutorialinator Installer
@@ -64,10 +64,10 @@ panel_top() {
 panel_row() {
     local content="$1" width="${2:-60}"
     local stripped
-    stripped=$(echo -e "$content" | sed 's/\x1b\[[0-9;]*m//g')
+    stripped=$(printf '%b' "$content" | sed $'s/\033\[[0-9;]*m//g' 2>/dev/null || printf '%b' "$content")
     local content_len=${#stripped}
     local pad=$(( width - content_len - 4 ))
-    if [ $pad -lt 0 ]; then pad=0; fi
+    if [ "$pad" -lt 0 ] 2>/dev/null; then pad=0; fi
     printf "  ${CYAN}│${NC} %b" "$content"
     printf '%*s' "$pad" ""
     printf " ${CYAN}│${NC}\n"
@@ -162,21 +162,8 @@ echo -e "${NC}"
 # Installation Dashboard Overview
 # ─────────────────────────────────────────────────────────────────────────────
 
-echo ""
-panel_top "Installation Dashboard" 60
-panel_empty 60
-panel_row "${BOLD}Agent${NC}                  ${BOLD}Status${NC}       ${BOLD}Progress${NC}" 60
-panel_row "──────────────────────────────────────────────────────" 60
-panel_row "${CYAN}Source Files${NC}          ${YELLOW}${S_PENDING} Pending${NC}    ░░░░░░░░░░   0%" 60
-panel_row "${CYAN}Prerequisites${NC}         ${YELLOW}${S_PENDING} Pending${NC}    ░░░░░░░░░░   0%" 60
-panel_row "${CYAN}Python Environment${NC}    ${YELLOW}${S_PENDING} Pending${NC}    ░░░░░░░░░░   0%" 60
-panel_row "${CYAN}Dependencies${NC}          ${YELLOW}${S_PENDING} Pending${NC}    ░░░░░░░░░░   0%" 60
-panel_row "${CYAN}Whisper Model${NC}         ${YELLOW}${S_PENDING} Pending${NC}    ░░░░░░░░░░   0%" 60
-panel_row "${CYAN}Playwright${NC}            ${YELLOW}${S_PENDING} Pending${NC}    ░░░░░░░░░░   0%" 60
-panel_row "${CYAN}Configuration${NC}         ${YELLOW}${S_PENDING} Pending${NC}    ░░░░░░░░░░   0%" 60
-panel_row "${CYAN}Verification${NC}          ${YELLOW}${S_PENDING} Pending${NC}    ░░░░░░░░░░   0%" 60
-panel_empty 60
-panel_bottom 60
+echo -e "  ${DIM}8 steps: Source Files ${S_ARROW} Prerequisites ${S_ARROW} Python Environment ${S_ARROW} Dependencies"
+echo -e "         ${S_ARROW} Whisper Model ${S_ARROW} Playwright ${S_ARROW} Configuration ${S_ARROW} Verification${NC}"
 echo ""
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -283,7 +270,7 @@ fi
 
 # FFmpeg (self-heal on macOS)
 if command -v ffmpeg &>/dev/null; then
-    FF_VER=$(ffmpeg -version 2>&1 | head -1 | awk '{print $3}')
+    FF_VER=$(ffmpeg -version 2>&1 | head -1 | awk '{print $3}' || echo "unknown")
     panel_row "FFmpeg $FF_VER   ${GREEN}${S_DONE}${NC}         Video processing" 60
 else
     if [[ "$(uname)" == "Darwin" ]] && command -v brew &>/dev/null; then
@@ -291,8 +278,12 @@ else
         panel_bottom 60
         echo ""
         step_line "$S_ACTIVE" "$CYAN" "FFmpeg" 50 "brew install ffmpeg..."
-        brew install ffmpeg 2>&1 | tail -3
-        step_line "$S_DONE" "$GREEN" "FFmpeg" 100 "Installed via Homebrew"
+        if brew install ffmpeg 2>&1 | tail -3; then
+            step_line "$S_DONE" "$GREEN" "FFmpeg" 100 "Installed via Homebrew"
+        else
+            step_line "$S_FAIL" "$RED" "FFmpeg" 50 "brew install failed"
+            die "FFmpeg auto-install failed. Try manually: brew install ffmpeg"
+        fi
         echo ""
         panel_top "System Check (continued)" 60
     else
@@ -367,7 +358,7 @@ else
 fi
 
 step_line "$S_ACTIVE" "$CYAN" "Python Environment" 80 "Upgrading pip..."
-"$VENV_DIR/bin/python" -m pip install --upgrade pip --quiet 2>&1 | tail -1
+"$VENV_DIR/bin/python" -m pip install --upgrade pip --quiet 2>&1 | tail -1 || true
 step_line "$S_DONE" "$GREEN" "Python Environment" 100 "pip up to date"
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -384,7 +375,7 @@ cd "$MCP_DIR"
 ENHANCED_OK=true
 "$VENV_DIR/bin/pip" install -e ".[enhanced]" --quiet 2>&1 | while IFS= read -r line; do
     echo -ne "\r  ${CYAN}${S_ACTIVE}${NC}  Dependencies             ████░░░░░░  40%  ${DIM}${line:0:40}${NC}  \033[K"
-done
+done || true
 echo ""
 
 # Check if enhanced install actually succeeded (pip in a pipe doesn't propagate exit code)
@@ -393,7 +384,7 @@ if ! "$VENV_DIR/bin/python" -c "import rapidocr_onnxruntime" &>/dev/null; then
     step_line "$S_WARN" "$YELLOW" "Dependencies" 50 "Enhanced deps unavailable, installing core..."
     "$VENV_DIR/bin/pip" install -e "." --quiet 2>&1 | while IFS= read -r line; do
         echo -ne "\r  ${CYAN}${S_ACTIVE}${NC}  Dependencies             ███████░░░  70%  ${DIM}${line:0:40}${NC}  \033[K"
-    done
+    done || true
     echo ""
     # Verify core install succeeded
     if ! "$VENV_DIR/bin/python" -c "import mcp; import whisper" &>/dev/null; then
@@ -454,19 +445,16 @@ fi
 
 step_line "$S_ACTIVE" "$CYAN" "Whisper Model" 20 "Downloading '$MODEL' model..."
 
-if "$VENV_DIR/bin/python" -c "import whisper; whisper.load_model('$MODEL')" 2>&1 | while IFS= read -r line; do
+"$VENV_DIR/bin/python" -c "import whisper; whisper.load_model('$MODEL')" 2>&1 | while IFS= read -r line; do
     echo -ne "\r  ${CYAN}${S_ACTIVE}${NC}  Whisper Model             █████░░░░░  50%  ${DIM}${line:0:35}${NC}  \033[K"
-done; then
-    echo ""
+done || true
+echo ""
+
+# Verify model loaded
+if "$VENV_DIR/bin/python" -c "import whisper; whisper.load_model('$MODEL')" &>/dev/null; then
     step_line "$S_DONE" "$GREEN" "Whisper Model" 100 "'$MODEL' model ready"
 else
-    echo ""
-    step_line "$S_WARN" "$YELLOW" "Whisper Model" 50 "Download failed, retrying..."
-    if "$VENV_DIR/bin/python" -c "import whisper; whisper.load_model('$MODEL')" 2>&1 | tail -3; then
-        step_line "$S_DONE" "$GREEN" "Whisper Model" 100 "'$MODEL' model ready (retry)"
-    else
-        step_line "$S_WARN" "$YELLOW" "Whisper Model" 80 "Will download on first use"
-    fi
+    step_line "$S_WARN" "$YELLOW" "Whisper Model" 80 "Will download on first use"
 fi
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -477,7 +465,7 @@ section_header "Playwright ${S_ARROW} Browser validation engine"
 
 step_line "$S_ACTIVE" "$CYAN" "Playwright" 20 "Installing MCP package..."
 
-if npx --yes @playwright/mcp@latest --version &>/dev/null 2>&1; then
+if npx --yes @playwright/mcp@latest --version >/dev/null 2>&1; then
     step_line "$S_ACTIVE" "$CYAN" "Playwright" 50 "MCP package ready"
 else
     step_line "$S_WARN" "$YELLOW" "Playwright" 30 "MCP package had issues (non-fatal)"
@@ -489,17 +477,19 @@ if [[ "$(uname)" == "Darwin" ]]; then
 else
     PLAYWRIGHT_CACHE="$HOME/.cache/ms-playwright"
 fi
-if [ -d "$PLAYWRIGHT_CACHE" ] && ls "$PLAYWRIGHT_CACHE/" 2>/dev/null | grep -q "chromium"; then
+if [ -d "$PLAYWRIGHT_CACHE" ] && ls "$PLAYWRIGHT_CACHE/" 2>/dev/null | grep -q "chromium" 2>/dev/null; then
     step_line "$S_DONE" "$GREEN" "Playwright" 100 "Chromium already installed"
 else
     step_line "$S_ACTIVE" "$CYAN" "Playwright" 60 "Installing Chromium browser..."
     TMPDIR_PW=$(mktemp -d)
-    if (
+    CHROMIUM_OK=false
+    (
         cd "$TMPDIR_PW"
         npm init -y > /dev/null 2>&1
         npm install @playwright/test > /dev/null 2>&1
-        npx playwright install chromium 2>&1 | tail -3
-    ); then
+        npx playwright install chromium 2>&1 | tail -3 || true
+    ) && CHROMIUM_OK=true
+    if [ "$CHROMIUM_OK" = true ]; then
         step_line "$S_DONE" "$GREEN" "Playwright" 100 "Chromium installed"
     else
         step_line "$S_WARN" "$YELLOW" "Playwright" 80 "Chromium install had issues (non-fatal)"

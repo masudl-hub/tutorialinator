@@ -41,9 +41,11 @@
 
 Transform videos, topics, or web resources into immersive, interactive single-HTML tutorials — powered by Claude Code.
 
+```
   ════════════════════════════════════════════════════════
   ▓▓▓  HOW TO INSTALL
   ════════════════════════════════════════════════════════
+```
 
 Run the installation script in your Terminal to load the skill, MCPs, and libraries needed.
 

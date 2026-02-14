@@ -42,7 +42,7 @@
 Transform videos, topics, or web resources into immersive, interactive single-HTML tutorials — powered by Claude Code.
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/masud/tutorialinator/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/masudl-hub/tutorialinator/main/install.sh | bash
 ```
 
 Each tutorial is a **single self-contained HTML file**: one `<style>` block, one `<script>` block, zero external dependencies. Open it in a browser. That's it.
@@ -444,7 +444,7 @@ Run verification manually:
 ./uninstall.sh
 
 # Or directly
-bash <(curl -fsSL https://raw.githubusercontent.com/masud/tutorialinator/main/uninstall.sh)
+bash <(curl -fsSL https://raw.githubusercontent.com/masudl-hub/tutorialinator/main/uninstall.sh)
 ```
 
 ```

@@ -201,7 +201,7 @@ else
     if ! command -v git &>/dev/null; then
         die "git is required for curl|bash install. Install git first."
     fi
-    git clone --depth 1 https://github.com/masud/tutorialinator.git "$TEMP_CLONE" 2>&1 | while read -r line; do
+    git clone --depth 1 https://github.com/masudl-hub/tutorialinator.git "$TEMP_CLONE" 2>&1 | while read -r line; do
         echo -e "       ${DIM}$line${NC}"
     done
     SOURCE_DIR="$TEMP_CLONE/skill"

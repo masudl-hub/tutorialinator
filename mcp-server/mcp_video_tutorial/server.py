@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 """
 MCP Video Tutorial Server
-Provides video analysis capabilities for the video-to-tutorial workflow.
+Provides video analysis tools, skill resources, and tutorial prompt templates
+for the Tutorialinator workflow. Works as both a Claude Code MCP integration
+and a standalone MCP server that other clients (e.g. Goose) can connect to.
 """
 
 import os
@@ -11,10 +13,14 @@ from pathlib import Path
 from typing import Optional, Any
 
 from mcp.server.fastmcp import FastMCP
+from mcp.server.fastmcp.prompts.base import UserMessage, AssistantMessage
 import whisper
 
 # Initialize FastMCP server
 mcp = FastMCP("tutorialinator")
+
+# Skill directory: two levels up from this file → ~/.claude/skills/tutorialinator/
+SKILL_DIR = Path(__file__).resolve().parent.parent.parent
 
 
 def resolve_video_path(video_path: str) -> Path:
@@ -611,11 +617,141 @@ def get_video_metadata(video_path: str) -> dict[str, Any]:
         }
 
 
+# ---------------------------------------------------------------------------
+# MCP Resources — expose skill files so any MCP client can read them
+# ---------------------------------------------------------------------------
+
+def _read_skill_file(relative_path: str) -> str:
+    """Read a file from the skill directory, with a clear error if missing."""
+    path = SKILL_DIR / relative_path
+    if not path.exists():
+        return f"Error: {relative_path} not found at {path}"
+    return path.read_text()
+
+
+@mcp.resource(
+    "tutorialinator://skill",
+    name="skill",
+    description="Full Tutorialinator design system, pedagogy spec, widget patterns, and orchestration rules (~1275 lines)",
+    mime_type="text/markdown",
+)
+def resource_skill() -> str:
+    return _read_skill_file("SKILL.md")
+
+
+@mcp.resource(
+    "tutorialinator://design-updates",
+    name="design-updates",
+    description="V3 design system changelog — what changed from the previous architecture",
+    mime_type="text/markdown",
+)
+def resource_design_updates() -> str:
+    return _read_skill_file("templates/DESIGN_UPDATES.md")
+
+
+@mcp.resource(
+    "tutorialinator://templates-guide",
+    name="templates-guide",
+    description="Overview of the single-HTML-file template architecture",
+    mime_type="text/markdown",
+)
+def resource_templates_guide() -> str:
+    return _read_skill_file("templates/README.md")
+
+
+# ---------------------------------------------------------------------------
+# MCP Prompts — ready-to-use prompt templates for each tutorial mode
+# ---------------------------------------------------------------------------
+
+@mcp.prompt(
+    name="tutorial_topic",
+    description="Generate an interactive tutorial on any topic using the Tutorialinator design system (Topic Mode)",
+)
+def prompt_tutorial_topic(topic: str) -> list:
+    skill = _read_skill_file("SKILL.md")
+    return [
+        AssistantMessage(
+            "I have the Tutorialinator design system loaded. "
+            "I will follow it exactly to produce a single self-contained HTML tutorial.\n\n"
+            + skill
+        ),
+        UserMessage(
+            f"Using the Tutorialinator design system above, generate an interactive tutorial about: {topic}\n\n"
+            "Follow the Topic Mode Workflow from the skill specification."
+        ),
+    ]
+
+
+@mcp.prompt(
+    name="tutorial_video",
+    description="Generate an interactive tutorial from a local video file (Video Mode)",
+)
+def prompt_tutorial_video(video_path: str) -> list:
+    skill = _read_skill_file("SKILL.md")
+    return [
+        AssistantMessage(
+            "I have the Tutorialinator design system loaded. "
+            "I will follow it exactly to produce a single self-contained HTML tutorial.\n\n"
+            + skill
+        ),
+        UserMessage(
+            f"Using the Tutorialinator design system above, generate an interactive tutorial from this video: {video_path}\n\n"
+            "Follow the Video Mode Workflow from the skill specification. "
+            "Use the MCP video tools (transcribe_with_timestamps, detect_scenes, extract_key_frames, etc.) to analyze the video first."
+        ),
+    ]
+
+
+@mcp.prompt(
+    name="tutorial_research",
+    description="Generate an interactive tutorial synthesized from provided URLs (Research Mode)",
+)
+def prompt_tutorial_research(urls: str) -> list:
+    skill = _read_skill_file("SKILL.md")
+    return [
+        AssistantMessage(
+            "I have the Tutorialinator design system loaded. "
+            "I will follow it exactly to produce a single self-contained HTML tutorial.\n\n"
+            + skill
+        ),
+        UserMessage(
+            f"Using the Tutorialinator design system above, generate an interactive tutorial from these resources:\n{urls}\n\n"
+            "Follow the Research Mode Workflow from the skill specification. "
+            "Fetch each URL, synthesize the content, and build a tutorial with inline citations."
+        ),
+    ]
+
+
+@mcp.prompt(
+    name="tutorial_deep_research",
+    description="Generate a comprehensive interactive tutorial via web research (Deep Research Mode)",
+)
+def prompt_tutorial_deep_research(topic: str) -> list:
+    skill = _read_skill_file("SKILL.md")
+    return [
+        AssistantMessage(
+            "I have the Tutorialinator design system loaded. "
+            "I will follow it exactly to produce a single self-contained HTML tutorial.\n\n"
+            + skill
+        ),
+        UserMessage(
+            f"Using the Tutorialinator design system above, do deep research and generate a comprehensive interactive tutorial about: {topic}\n\n"
+            "Follow the Deep Research Mode Workflow from the skill specification. "
+            "Search the web for 5-15 quality sources, build a concept map, identify misconceptions, then generate the tutorial."
+        ),
+    ]
+
+
+# ---------------------------------------------------------------------------
+# Server entry point
+# ---------------------------------------------------------------------------
+
 def run_server():
     """Entry point for running the MCP server."""
     print("Starting MCP Video Tutorial Server...")
     print(f"Cache directory: {CACHE_DIR}")
     print(f"Whisper model: {WHISPER_MODEL_SIZE} on {WHISPER_DEVICE}")
+    print(f"Skill directory: {SKILL_DIR}")
     mcp.run()
 
 

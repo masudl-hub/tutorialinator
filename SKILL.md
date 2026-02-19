@@ -461,6 +461,17 @@ Built by JS. Features: staggered option slide-in, correct → green + sparkle, w
 </section>
 ```
 
+**Required CSS for chapter end** (centering body text within the centered container):
+
+```css
+.ch-end { text-align: center; padding: 120px 10vw; }
+.ch-end h2 { font-size: 36px; margin-bottom: 16px; }
+.ch-end p.body { max-width: 480px; margin-left: auto; margin-right: auto; }
+.ch-end-sub { font-size: 13px; font-family: var(--mono); color: var(--t4); margin-top: 16px; }
+```
+
+**CRITICAL**: `p.body` has `max-width: 620px` globally. Inside `.ch-end` (which uses `text-align: center`), the paragraph block must have `margin-left: auto; margin-right: auto` or it will sit left-aligned despite the parent centering. This is a common CSS gotcha — `text-align: center` centers inline content but does NOT center block elements with a constrained width.
+
 ---
 
 ## Widget Pattern Library
@@ -1061,6 +1072,87 @@ Since the output is a single HTML file:
 
 ---
 
+## MANDATORY: HTML Structure Validation (Pre-E2E)
+
+**CRITICAL**: After writing the tutorial HTML file and BEFORE running Playwright E2E tests, you MUST run this structural validation script. This catches nesting bugs (premature chapter closes, orphaned sections) that are invisible to console error checks and visual tests.
+
+### Why This Exists
+
+A single extra `</div>` inside a chapter container will:
+- Prematurely close the `<div class="chapter">` wrapper
+- Orphan all subsequent sections outside any chapter container
+- Produce ZERO console errors and ZERO visual issues in basic Playwright checks
+- Silently break chapter navigation, XP tracking, scroll reveal, and sidebar progress for the orphaned content
+
+This bug is undetectable by any other validation step. This script is the ONLY defense.
+
+### Run the Validator
+
+After writing the HTML file, run this Node.js script via Bash:
+
+```bash
+node -e "
+const fs = require('fs');
+const html = fs.readFileSync('PATH_TO_TUTORIAL_HTML', 'utf8');
+const bodyMatch = html.match(/<body[^>]*>([\s\S]*)<\/body>/i);
+if (!bodyMatch) { console.error('FAIL: No <body> tag found'); process.exit(1); }
+let body = bodyMatch[1];
+body = body.replace(/<script[\s\S]*?<\/script>/gi, '');
+const errors = [];
+const chapterOpens = (body.match(/<div[^>]*class=\"[^\"]*chapter[^\"]*\"[^>]*>/g) || []);
+let depth = 0, chapterCloseCount = 0, inChapter = false, chapterDepth = 0;
+const tagPattern = /<(\/?)div\b[^>]*>/gi;
+let m;
+while ((m = tagPattern.exec(body)) !== null) {
+  const isClose = m[1] === '/';
+  const fullTag = m[0];
+  if (!isClose && /class=\"[^\"]*chapter[^\"]*\"/.test(fullTag)) { inChapter = true; chapterDepth = depth; depth++; }
+  else if (!isClose) { depth++; }
+  else { depth--; if (inChapter && depth === chapterDepth) { chapterCloseCount++; inChapter = false; } }
+}
+if (chapterOpens.length !== chapterCloseCount) {
+  errors.push('CHAPTER TAG MISMATCH: Found ' + chapterOpens.length + ' chapter opens but ' + chapterCloseCount + ' chapter closes.');
+}
+let insideCh = false, cDepth2 = 0, dDepth2 = 0, orphans = [];
+const allTags = /<(\/?)(div|section|header)\b([^>]*)>/gi;
+while ((m = allTags.exec(body)) !== null) {
+  const isClose = m[1] === '/'; const tagName = m[2].toLowerCase(); const attrs = m[3];
+  if (tagName === 'div') {
+    if (!isClose) { if (/class=\"[^\"]*chapter[^\"]*\"/.test(attrs)) { insideCh = true; cDepth2 = dDepth2; } dDepth2++; }
+    else { dDepth2--; if (insideCh && dDepth2 === cDepth2) { insideCh = false; } }
+  } else if ((tagName === 'section' || tagName === 'header') && !isClose && !insideCh) {
+    const preceding = body.substring(0, m.index);
+    const lineNum = (preceding.match(/\\n/g) || []).length + 1;
+    orphans.push('  Line ~' + lineNum + ': <' + tagName + attrs.substring(0, 40) + '>');
+  }
+}
+if (orphans.length > 0) { errors.push('ORPHANED CONTENT: ' + orphans.length + ' element(s) outside any chapter container:\\n' + orphans.join('\\n')); }
+const chSections = []; let curSections = 0, curId = '', inC = false, cd = 0, dd = 0;
+const allTags2 = /<(\/?)(div|section)\b([^>]*)>/gi;
+while ((m = allTags2.exec(body)) !== null) {
+  const isClose = m[1] === '/'; const tagName = m[2].toLowerCase(); const attrs = m[3];
+  if (tagName === 'div') {
+    if (!isClose) { if (/class=\"[^\"]*chapter[^\"]*\"/.test(attrs)) { inC = true; cd = dd; const idM = attrs.match(/id=\"([^\"]*)\"/); curId = idM ? idM[1] : '?'; curSections = 0; } dd++; }
+    else { dd--; if (inC && dd === cd) { chSections.push({id: curId, n: curSections}); inC = false; } }
+  } else if (tagName === 'section' && !isClose && inC) { curSections++; }
+}
+chSections.forEach(function(ch) { if (ch.n < 3) errors.push('SUSPICIOUS: ' + ch.id + ' has only ' + ch.n + ' sections (expected >= 3).'); });
+if (errors.length > 0) { console.error('=== HTML STRUCTURE VALIDATION FAILED ==='); errors.forEach(function(e) { console.error('\\n' + e); }); console.error('\\n=== FIX BEFORE RUNNING E2E TESTS ==='); process.exit(1); }
+else { console.log('HTML structure validation PASSED: ' + chapterOpens.length + ' chapters, all sections properly nested.'); }
+"
+```
+
+Replace `PATH_TO_TUTORIAL_HTML` with the actual file path (quoted if it contains spaces).
+
+### On Failure
+
+1. The error message identifies exact orphaned elements with approximate line numbers
+2. Search for the premature `</div>` — almost always an extra closing tag inside a card, bento, or widget
+3. Fix the nesting, then re-run this validation BEFORE proceeding to Playwright E2E
+4. Common causes: copy-pasted widget snippets with extra `</div>`, bento grids with mismatched div counts, conversation replay widgets where the closing tags don't match the nesting depth
+
+---
+
 ## MANDATORY: E2E Validation with Playwright MCP
 
 **CRITICAL**: After writing the tutorial HTML file, you MUST run the full E2E validation using the Playwright MCP before showing it to the user. This step is NOT optional. **DO NOT open the file for the user or declare success until every test passes.**
@@ -1099,6 +1191,34 @@ Run these steps in order. If any step fails, fix the issue and re-run from step 
    - `browser_console_messages({ level: "error" })` — verify no new errors
 
 5. **Navigate back to Chapter 1** by clicking dot 1.
+
+#### Phase 2.5: Content Leak Detection
+
+This phase catches structural bugs where HTML elements escape their chapter container and appear as direct children of `<body>`. These bugs don't cause console errors but create visual leaks.
+
+6. **Check for body-level content leaks** — use `browser_evaluate` to scan for elements outside chapter containers:
+   ```
+   browser_evaluate({ function: "() => { const allowedClasses = ['cursor-glow', 'scroll-progress', 'g-toast', 'chapter', 'sidebar']; const leaks = []; for (const child of document.body.children) { const tag = child.tagName; const cls = child.className || ''; const isAllowed = allowedClasses.some(c => cls.includes(c)) || tag === 'SCRIPT' || tag === 'STYLE' || tag === 'LINK'; if (!isAllowed) { leaks.push({ tag, className: cls, text: (child.textContent || '').slice(0, 80) }); } } return { leakCount: leaks.length, leaks }; }" })
+   ```
+   **Expected:** `leakCount` is 0. If ANY leaks are found, fix the HTML so all content is inside its `.chapter` container.
+
+7. **Verify section containment** — check no sections are orphaned:
+   ```
+   browser_evaluate({ function: "() => { const orphaned = document.querySelectorAll('body > section, body > header, body > p, body > div.div'); return { orphanedCount: orphaned.length, orphaned: Array.from(orphaned).map(el => ({ tag: el.tagName, class: el.className, text: (el.textContent || '').slice(0, 60) })) }; }" })
+   ```
+   **Expected:** `orphanedCount` is 0.
+
+8. **Per-chapter visibility isolation** — verify exactly 1 chapter is active:
+   ```
+   browser_evaluate({ function: "() => { const chs = document.querySelectorAll('.chapter'); let active = 0; chs.forEach(ch => { if (getComputedStyle(ch).display !== 'none') active++; }); return { activeChapters: active, total: chs.length }; }" })
+   ```
+   **Expected:** `activeChapters` is exactly 1.
+
+9. **Screenshot for visual leak review** (after navigating to Chapter 2):
+   ```
+   browser_take_screenshot({ type: "png", fullPage: true, filename: "leak-check-ch2.png" })
+   ```
+   **Review the screenshot visually.** If content from Chapter 1 or Chapter 3 is visible while viewing Chapter 2, there is a visual leak.
 
 #### Phase 3: Interactive Widgets
 
@@ -1156,6 +1276,9 @@ Run these steps in order. If any step fails, fix the issue and re-run from step 
 | Console errors | 0 errors at every check | Any error at any point |
 | Page render | Hero title + sidebar visible in snapshot | Empty or partial snapshot |
 | Chapter nav | Each chapter shows its own hero title | Same content or blank after click |
+| Content leak (structure) | 0 body-level content elements outside `.chapter` divs | Any `<section>`, `<header>`, `<p>` as direct child of `<body>` |
+| Content leak (visibility) | Exactly 1 active chapter at any time | Multiple chapters with `display` not `none` |
+| Section containment | 0 orphaned sections | Any section or header outside a `.chapter` container |
 | Quiz | Option gets correct/wrong class, explanation appears | No visual change on click |
 | Sandbox | Output iframe has content after Run | Empty iframe or JS error |
 | XP | Counter > 0 after interactions | Still shows 0 |
@@ -1176,6 +1299,8 @@ Common fixes:
 - Missing function definitions referenced in onclick handlers
 - Element IDs in JS that don't match IDs in HTML
 - **HTML entities in hero titles** → `&` in innerHTML becomes `&amp;` — the `heroTextReveal` function MUST detect entity sequences (`&...;`) and wrap them as single `<span class="char">` elements, not individual characters
+- **Content leaks (sections outside chapter containers)** → A `</div>` closing tag for a `.chapter` is misplaced, causing subsequent sections to escape into `<body>`. Count opening `<div class="chapter"` tags and their matching `</div>` tags. Common culprits: conversation replay widgets, bento grids, and cards with mismatched div counts.
+- **Multiple active chapters** → The `goTo()` function must set `display: none` on ALL chapters except the target. Verify the navigation JS properly hides the previous chapter before showing the next.
 
 ### Fallback (if Playwright MCP is unavailable)
 

@@ -21,12 +21,11 @@
 
         [▓▓▓▓▓]═══════════════════════════════════════[▓▓▓▓▓]
 
-       ┌─────────┐   ┌─────────┐   ┌─────────┐   ┌──────────┐
-       │  VIDEO  │   │  TOPIC  │   │   WEB   │   │   DEEP   │
-       │   .mp4  │   │ "teach" │   │  URLs   │   │ RESEARCH │
-       └────┬────┘   └────┬────┘   └────┬────┘   └────┬─────┘
-            │             │             │             │
-            └─────────────┴──────┬──────┴─────────────┘
+   ┌──────┐ ┌──────┐ ┌──────┐ ┌──────┐ ┌──────┐ ┌──────┐ ┌──────┐
+   │ [V]  │ │ [A]  │ │ [C]  │ │ [S]  │ │ [T]  │ │ [R]  │ │ [D]  │
+   │ .mp4 │ │ .mp3 │ │~/dir/│ │.pptx │ │"tchr"│ │ URLs │ │ deep │
+   └──┬───┘ └──┬───┘ └──┬───┘ └──┬───┘ └──┬───┘ └──┬───┘ └──┬───┘
+      └────────┴────────┴────────┬────────┴────────┴─────────┘
                                  │
                             ╔════╧════╗
                             ║   AI    ║
@@ -39,7 +38,7 @@
                           └─────────────┘
 ```
 
-Transform videos, topics, or web resources into immersive, interactive single-HTML tutorials — powered by Claude Code.
+Transform videos, audio, topics, codebases, slide decks, or web resources into immersive, interactive single-HTML tutorials — powered by Claude Code.
 
 ```
   ════════════════════════════════════════════════════════
@@ -123,6 +122,8 @@ All installed into an isolated Python virtual environment (not system-wide):
   │  • fastmcp         FastMCP server framework            │
   │  • yt-dlp          Video downloading                   │
   │  • ffmpeg-python   FFmpeg bindings                     │
+  │  • python-pptx     PowerPoint slide extraction         │
+  │  • PyMuPDF         PDF rendering & text extraction     │
   │  • pydantic        Data validation                     │
   │  • httpx           HTTP client                         │
   │  • beautifulsoup4  HTML parsing                        │
@@ -131,7 +132,7 @@ All installed into an isolated Python virtual environment (not system-wide):
   ╰────────────────────────────────────────────────────────╯
 ```
 
-Links: [openai-whisper](https://github.com/openai/whisper) · [mcp](https://github.com/modelcontextprotocol/python-sdk) · [fastmcp](https://github.com/jlowin/fastmcp) · [yt-dlp](https://github.com/yt-dlp/yt-dlp) · [ffmpeg-python](https://github.com/kkroening/ffmpeg-python) · [pydantic](https://github.com/pydantic/pydantic) · [httpx](https://github.com/encode/httpx) · [beautifulsoup4](https://www.crummy.com/software/BeautifulSoup/) · [rich](https://github.com/Textualize/rich)
+Links: [openai-whisper](https://github.com/openai/whisper) · [mcp](https://github.com/modelcontextprotocol/python-sdk) · [fastmcp](https://github.com/jlowin/fastmcp) · [yt-dlp](https://github.com/yt-dlp/yt-dlp) · [ffmpeg-python](https://github.com/kkroening/ffmpeg-python) · [python-pptx](https://python-pptx.readthedocs.io) · [PyMuPDF](https://pymupdf.readthedocs.io) · [pydantic](https://github.com/pydantic/pydantic) · [httpx](https://github.com/encode/httpx) · [beautifulsoup4](https://www.crummy.com/software/BeautifulSoup/) · [rich](https://github.com/Textualize/rich)
 
 Optional enhanced: `whisper-timestamped`, `rapidocr-onnxruntime`, `opencv-python`
 
@@ -159,7 +160,7 @@ Optional enhanced: `whisper-timestamped`, `rapidocr-onnxruntime`, `opencv-python
 ```
   ~/.claude/
   ├── skills/tutorialinator/           ← Skill files
-  │   ├── SKILL.md                     ← Main specification (~1275 lines)
+  │   ├── SKILL.md                     ← Main specification (~1580 lines)
   │   ├── auto-setup.sh                ← Health check script
   │   ├── .mcp.json                    ← MCP server configuration
   │   ├── templates/
@@ -171,7 +172,7 @@ Optional enhanced: `whisper-timestamped`, `rapidocr-onnxruntime`, `opencv-python
   │       └── mcp_video_tutorial/
   │           ├── __init__.py
   │           ├── __main__.py
-  │           └── server.py            ← MCP server (7 video tools)
+  │           └── server.py            ← MCP server (8 tools)
   │
   └── settings.json                    ← enableAllProjectMcpServers: true
 
@@ -217,34 +218,32 @@ flowchart TD
     A["/tutorialinator input"] --> B["auto-setup.sh\n(verify venv, MCP, Playwright)"]
     B --> C{Mode Detection}
 
-    C -->|"Video file path"| V1["[V] Video Mode"]
-    C -->|"URL(s) in input"| R1["[R] Research Mode"]
-    C -->|"'deep dive' keyword"| D1["[D] Deep Research"]
-    C -->|"Topic string"| T1["[T] Topic Mode"]
+    C -->|"[V] Video file path"| V1["Video Mode"]
+    C -->|"[A] Audio file path"| AU1["Audio Mode"]
+    C -->|"[C] Directory path"| CB1["Codebase Mode"]
+    C -->|"[S] Slide deck file"| SL1["Slide Deck Mode"]
+    C -->|"[R] URL(s) in input"| R1["Research Mode"]
+    C -->|"[D] 'deep dive' keyword"| D1["Deep Research Mode"]
+    C -->|"[T] Topic string"| T1["Topic Mode"]
 
-    V1 --> V2["MCP: transcribe_with_timestamps\ndetect_scenes · extract_key_frames"]
-    V2 --> V3["MCP: detect_code_in_frames\ngenerate_chapters"]
-    V3 --> V4["Map video chapters → tutorial chapters\nExtract code examples from frames"]
+    V1 --> V2["MCP: transcribe_with_timestamps\ndetect_scenes · extract_key_frames\ndetect_code_in_frames · generate_chapters"]
+    AU1 --> AU2["MCP: transcribe_with_timestamps\n(audio only — no video steps)\ngenerate_chapters from transcript"]
+    CB1 --> CB2["Glob directory tree\nRead README + entry points\nSmart file selection"]
+    SL1 --> SL2["MCP: extract_slides\n(pptx: python-pptx · pdf: PyMuPDF)\nSpeaker notes → explanations"]
+    R1 --> R2["Fetch each URL · Parse content\nIdentify themes, gaps, best examples"]
+    D1 --> D2["Plan queries · Web search\nFetch 5–15 sources · Filter quality\nBuild concept map"]
+    T1 --> T2["Analyze topic scope\nPlan 3–5 chapters · Progressive difficulty"]
 
-    R1 --> R2["Fetch each URL\nParse content"]
-    R2 --> R3["Identify themes, gaps,\nbest examples"]
-
-    D1 --> D2["Plan search queries\n(5–15 sources)"]
-    D2 --> D3["Web search + fetch\nFilter by quality"]
-    D3 --> D4["Build concept map\nIdentify misconceptions"]
-
-    T1 --> T2["Analyze topic scope\nPrereqs + core concepts"]
-    T2 --> T3["Plan 3–5 chapters\nProgressive difficulty"]
-
-    V4 --> LD["Learning Design Phase\n(per chapter: objectives → sequence\n→ widget selection → assessment)"]
-    R3 --> LD
-    D4 --> LD
-    T3 --> LD
+    V2 --> LD["Learning Design Phase\n(per chapter: objectives → sequence\n→ widget selection → assessment)"]
+    AU2 --> LD
+    CB2 --> LD
+    SL2 --> LD
+    R2 --> LD
+    D2 --> LD
+    T2 --> LD
 
     LD --> PR["Pedagogical Review\n(Bloom's taxonomy check,\ncontent ≥ 2× challenges)"]
-
     PR --> GEN["Phased HTML Generation\n(CSS + Ch1 → Ch2 → Ch3 → JS)\nSingle self-contained file"]
-
     GEN --> E2E["Playwright E2E Validation\n6 phases: load → nav → widgets\n→ XP → keyboard → console"]
     E2E -->|"Errors found"| FIX["Fix & re-validate"]
     FIX --> E2E
@@ -271,7 +270,8 @@ graph TB
         E["Whisper — speech-to-text"]
         F["FFmpeg — video processing"]
         G["yt-dlp — video download"]
-        H["Chromium — E2E validation"]
+        H["python-pptx / PyMuPDF — slide extraction"]
+        I["Chromium — E2E validation"]
     end
 
     A --> B
@@ -280,7 +280,8 @@ graph TB
     C --> E
     C --> F
     C --> G
-    D --> H
+    C --> H
+    D --> I
 ```
 
 ---
@@ -297,6 +298,9 @@ graph TB
   │  Mode             Description                          │
   │  ─────────────────────────────────────────────         │
   │  [V] Video        Video files or YouTube/Vimeo URLs    │
+  │  [A] Audio        Audio files — .mp3, .m4a, .wav       │
+  │  [C] Codebase     Local project directory              │
+  │  [S] Slides       PowerPoint or PDF slide decks        │
   │  [T] Topic        Topic descriptions via Claude        │
   │  [R] Research     Web URLs and documentation           │
   │  [D] Deep         Comprehensive multi-source research  │
@@ -304,27 +308,52 @@ graph TB
   ╰────────────────────────────────────────────────────────╯
 ```
 
-### Video Mode
+### [V] Video Mode
 Turn a video into an interactive tutorial:
 ```bash
 /tutorialinator ~/Downloads/react-hooks-talk.mp4
 /tutorialinator "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
 ```
 
-### Topic Mode
+### [A] Audio Mode
+Turn a podcast, voice memo, or recorded meeting into a tutorial:
+```bash
+/tutorialinator ~/Desktop/onboarding-call.mp3
+/tutorialinator ~/voice-memos/architecture-walkthrough.m4a
+```
+Whisper transcribes locally. No video steps — pure transcript-driven generation.
+
+### [C] Codebase Mode
+Generate a tutorial that teaches a local codebase:
+```bash
+/tutorialinator ~/projects/my-app/
+/tutorialinator ~/work/internal-tool/ "audience: new engineers joining the team"
+```
+Reads README, entry points, and most-imported modules to build an architecture-first tutorial.
+
+### [S] Slide Deck Mode
+Convert a PowerPoint or PDF slide deck into an interactive tutorial:
+```bash
+/tutorialinator ~/Desktop/q4-architecture-review.pptx
+/tutorialinator ~/Downloads/onboarding-deck.pdf "these are slides, not a doc"
+```
+Speaker notes become explanations. Bullet points become interactive challenges.
+`.key` / `.odp`: export to `.pptx` or `.pdf` first.
+
+### [T] Topic Mode
 Generate a tutorial from Claude's knowledge:
 ```bash
 /tutorialinator "teach me TypeScript generics"
 /tutorialinator "create a tutorial on CSS Grid for beginners"
 ```
 
-### Research Mode
+### [R] Research Mode
 Synthesize multiple web resources into a tutorial:
 ```bash
 /tutorialinator "build a tutorial from these resources: https://react.dev/learn https://overreacted.io/useeffect/"
 ```
 
-### Deep Research Mode
+### [D] Deep Research Mode
 Comprehensive web research into a tutorial:
 ```bash
 /tutorialinator "research Rust ownership thoroughly and teach me"
@@ -341,6 +370,19 @@ Every mode produces a single HTML file:
 
 Open it in any browser. No server needed.
 
+### Publishing (optional)
+
+After generation, the skill will ask if you want to publish. You choose the option and explicitly approve the command before anything runs.
+
+| Option | Privacy | Speed | Best for |
+|---|---|---|---|
+| **Share the file** | Fully private | Instant | Sensitive content, internal sharing |
+| **Netlify** | Anyone with link | Seconds | Quick share, non-GitHub users |
+| **GitHub Pages** | Fully public | 1–5 min | Permanent home, portfolio |
+| **Cloudflare Pages + Access** | Gated by you | ~1 min | URL + access control |
+
+See SKILL.md `## Publishing Your Tutorial` for exact commands.
+
 ---
 
 ```
@@ -349,7 +391,7 @@ Open it in any browser. No server needed.
   ════════════════════════════════════════════════════════
 ```
 
-The installer lets you choose between two Whisper models for video transcription:
+The installer lets you choose between two Whisper models for transcription:
 
 ```
   ╭──────────────── Whisper Model Selection ───────────────╮
@@ -367,7 +409,7 @@ The installer lets you choose between two Whisper models for video transcription
   ╰────────────────────────────────────────────────────────╯
 ```
 
-The model is only used in **Video Mode**. Topic, Research, and Deep Research modes don't need Whisper at all.
+Used in **[V] Video Mode** and **[A] Audio Mode**. Topic, Research, Deep Research, Codebase, and Slide Deck modes don't need Whisper.
 
 To switch models later, re-run the installer or manually download:
 ```bash
@@ -450,6 +492,13 @@ Playwright is for E2E validation. If it fails, tutorials still generate — you 
 npx --yes @playwright/mcp@latest --version
 npx playwright install chromium
 ```
+
+### python-pptx / PyMuPDF not found
+If [S] Slide Deck Mode fails, verify the packages are installed:
+```bash
+~/.claude/skills/tutorialinator/mcp-server/venv/bin/python -c "import pptx; import fitz; print('Slide tools OK')"
+```
+If not, re-run `install.sh` to repair the venv.
 
 ### Import errors after install
 Run verification manually:

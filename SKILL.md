@@ -90,11 +90,26 @@ The skill auto-detects the input mode from user requests:
 - Primary source: Web search + analysis
 - Requires: Multi-step research, quality filtering
 
+**Audio Mode**: `/tutorialinator podcast.mp3` or `/tutorialinator voice-memo.m4a`
+- Primary source: Audio transcript
+- Requires: MCP transcription tools
+
+**Codebase Mode**: `/tutorialinator ~/my-project/`
+- Primary source: Project files and architecture
+- Requires: Glob, Grep, file reading
+
+**Slide Deck Mode**: `/tutorialinator deck.pptx` or `/tutorialinator slides.pdf`
+- Primary source: Slide content, speaker notes, slide images
+- Requires: MCP slide extraction tools
+
 ### Mode Detection Order
 1. Check for video file path first (original mode)
-2. Check for URLs in input (Research Mode)
-3. Check for "research" or "deep dive" keywords (Deep Research Mode)
-4. Default to Topic Mode for teaching requests
+2. Check for audio file path — `.mp3`, `.m4a`, `.wav`, `.ogg` extension, OR keywords "voice memo", "podcast", "audio recording", "recorded meeting"
+3. Check for directory path — ends with `/` or path resolves to a directory, OR keywords "explain this codebase", "teach this project", "walk through this repo" (Codebase Mode)
+4. Check for slide deck file — `.pptx`, `.ppt`, `.odp` extension, OR `.pdf` files where the prompt contains "slides", "deck", "presentation" (Slide Deck Mode)
+5. Check for URLs in input (Research Mode)
+6. Check for "research" or "deep dive" keywords (Deep Research Mode)
+7. Default to Topic Mode for teaching requests
 
 ### File Path Handling (CRITICAL)
 
@@ -926,6 +941,39 @@ After completing this for all chapters, run the **Pedagogical Review Agent** (se
 6. **Tutorial Generation** — Create comprehensive content including misconceptions section, deep dives, resource list
 7. **Site Generation** — Build the single HTML file with all content
 
+### Audio Mode Workflow
+
+Good for: podcasts, voice memos, recorded meetings, lecture recordings, audio courses.
+
+1. **Transcription** — Use `transcribe_with_timestamps` MCP tool directly on the audio file. Whisper handles audio natively — no video-specific steps needed, no frame extraction, no scene detection.
+2. **Content Structuring** — Use `generate_chapters` on the transcript. No frames, no scenes — purely audio-driven. The chapter structure follows natural topic shifts in the spoken content.
+3. **Learning Design** — Complete the Learning Design Phase (above) for each chapter. Audio-only sources often benefit from more visual widgets to compensate for the absence of visual source material — lean into diagrams, interactive demos, and code sandboxes.
+4. **Pedagogical Review** — Run the pedagogical review agent on the chapter plan.
+5. **Site Generation** — Build the single HTML file. No video player or frame embeds. Add a subtle audio-wave hero accent to signal the source was audio.
+
+### Codebase Mode Workflow
+
+Good for: open source onboarding, internal tooling walkthroughs, code review prep, architecture documentation that actually teaches.
+
+1. **Project Mapping** — Use Glob to build a directory tree. Identify: README (always read first), entry points (`main.py`, `index.ts`, `app.js`, etc.), core module directories, test files, config files (`package.json`, `pyproject.toml`, etc.). Skip: `node_modules`, `.git`, `build/`, `dist/`, `venv/`.
+2. **Smart File Selection** — Read the README fully. Then read entry points and core modules. Prioritize files that are imported the most (scan import/require statements). Budget: read enough to understand the architecture without reading everything.
+3. **Architecture Extraction** — Build a mental model: what does this project do, what are its layers, what are the key patterns, how do you navigate it as a new contributor?
+4. **Learning Design** — Chapters typically follow: Overview & Purpose → Core Architecture → Key Patterns & Conventions → How to Add/Modify → How to Debug & Test. Adapt based on what the codebase actually contains. Complete the Learning Design Phase (above) for each chapter.
+5. **Pedagogical Review** — Run the pedagogical review agent on the chapter plan.
+6. **Site Generation** — Build the single HTML file. Code sandboxes should use real code snippets from the project. Include an interactive file-tree explorer widget. Every quiz should test architecture understanding, not syntax recall.
+
+### Slide Deck Mode Workflow
+
+Good for: conference talks, internal training decks, lecture slides, pitch decks that contain real knowledge.
+
+1. **Slide Extraction** — Use the `extract_slides` MCP tool (tutorialinator server). Returns per-slide: title, body text, speaker notes, and a rendered image. Speaker notes are gold — they often contain the real explanation that the slide's bullet points omit.
+2. **Content Mapping** — Map slides to tutorial chapters. A chapter ≈ a natural topic cluster (not necessarily one slide = one section). Speaker notes → body explanations. Slide titles → section headings. Slide images → visual reference cards (embed as base64 if the deck has useful diagrams).
+3. **Learning Design** — Slides are a one-directional format — the deck's structure is the author's intended flow. Respect it, but convert each key point into an interactive moment. Every bullet point that says "remember X" becomes a quiz or challenge widget. Complete the Learning Design Phase (above) for each chapter.
+4. **Pedagogical Review** — Run the pedagogical review agent on the chapter plan.
+5. **Site Generation** — Build the single HTML file. Consider a slide-timeline widget that lets learners scrub through the original slide flow before diving into each chapter.
+
+**Note:** `.key` (Keynote) and `.odp` (LibreOffice) are not yet supported — suggest the user export to `.pptx` or `.pdf` first.
+
 ---
 
 ## Content Generation Standards
@@ -1048,7 +1096,7 @@ Since the output is a single HTML file:
 - [ ] All chapters have complete content (no placeholders)
 - [ ] Every chapter has at least 1 exploration widget
 - [ ] Every chapter has at least 1 challenge widget (not just exploration)
-- [ ] Every chapter has at least 1 code sandbox
+- [ ] Every chapter has at least 1 **active challenge element** — a code sandbox for code-heavy topics, OR a purpose-built interactive widget (config editor, prompt builder, decision scenario, drag-and-drop tool, etc.) for conceptual/process topics. Text + quiz alone is never sufficient regardless of topic.
 - [ ] Every chapter has a quiz at Bloom's level 3+ (application/analysis/evaluation)
 - [ ] No quiz can be answered by scanning the paragraph directly above it
 - [ ] Hero descriptions are written, not template text
@@ -1280,7 +1328,7 @@ This phase catches structural bugs where HTML elements escape their chapter cont
 | Content leak (visibility) | Exactly 1 active chapter at any time | Multiple chapters with `display` not `none` |
 | Section containment | 0 orphaned sections | Any section or header outside a `.chapter` container |
 | Quiz | Option gets correct/wrong class, explanation appears | No visual change on click |
-| Sandbox | Output iframe has content after Run | Empty iframe or JS error |
+| Sandbox | Output iframe has content after Run (skip if topic has no code sandbox — test the interactive widget instead) | Empty iframe or JS error when sandbox is present |
 | XP | Counter > 0 after interactions | Still shows 0 |
 | Keyboard | ArrowRight changes chapter | No change |
 
@@ -1330,10 +1378,215 @@ After the full Playwright E2E test passes:
 - [ ] Zero console errors across all 6 phases
 - [ ] All chapters navigable via sidebar and keyboard
 - [ ] At least one quiz tested (correct + wrong answers)
-- [ ] At least one sandbox tested (Run produces output)
+- [ ] At least one active challenge element tested per chapter (sandbox Run produces output, OR interactive widget responds to user input)
 - [ ] XP counter incremented after interactions
 - [ ] Content is complete and accurate
 - [ ] Conversational tone throughout
+
+---
+
+## Publishing Your Tutorial
+
+> **CRITICAL — READ BEFORE IMPLEMENTING:**
+> **Never publish automatically. Never run publish commands without explicit user confirmation.**
+> Publishing is irreversible and makes the tutorial publicly accessible on the internet.
+> The workflow below is strictly opt-in and requires the user to approve the actual shell command execution.
+
+### The workflow
+
+**Step 1 — After auto-open, casually offer (do NOT prompt or push):**
+
+At the end of your completion message, add a single line:
+
+> Want me to publish this so you can share a link?
+
+That's it. No list of options. No urgency. If they don't respond or say no, drop it.
+
+**Step 2 — If they say yes, present the four options with their privacy tradeoffs:**
+
+Write this in your response:
+
+---
+
+**Before publishing, pick the right option for how private this needs to be:**
+
+| Option | Privacy | Setup | Speed |
+|---|---|---|---|
+| **Share the file** | Fully private — only who you send it to | Zero | Instant |
+| **Netlify** | Anyone with the link can see it | Low | Seconds |
+| **GitHub Pages** | Fully public — indexed, on your profile | Low | 1–5 min |
+| **Cloudflare Pages + Access** | Gated — you control who gets in | Medium (one-time) | ~1 min |
+
+---
+
+**Step 3 — Once they choose, show a bold warning and the exact command. DO NOT RUN YET.**
+
+For any option that publishes to the internet, show this first:
+
+**⚠️ This will make your tutorial accessible outside your machine. Does it contain confidential code, internal architecture, or sensitive data?**
+
+Then show the exact command you'll run. Tell them: "I'll run this now — you'll be prompted to approve."
+
+**Step 4 — Execute only after user approves the Claude Code permission prompt.**
+
+The permission prompt is the final gate — never bypass it.
+
+---
+
+### Option A — Share the file directly (offline, fully private)
+
+No command needed. Just tell the user:
+
+> Your tutorial is a single self-contained HTML file — no server required. You can share it directly:
+> - Drag it into Slack or email
+> - Upload to Dropbox/Drive and share the link
+> - AirDrop it
+>
+> The recipient opens it in their browser. Nothing is ever on the internet.
+
+Use this when: the content is sensitive, the audience is internal, or you just don't need a URL.
+
+---
+
+### Option B — Netlify (easy, instant, anyone-with-link)
+
+**Requires**: Free Netlify account + Personal Access Token. Generate at: netlify.com → User Settings → Applications → Personal access tokens. Set once: `export NETLIFY_AUTH_TOKEN="nfp_your_token_here"` (add to shell profile to persist). No `netlify-cli` needed — uses the REST API directly.
+
+```bash
+TUTORIAL_DIR="$HOME/[topic]-tutorial/src"
+DEPLOY_DIR=$(mktemp -d)
+cp "$TUTORIAL_DIR/tutorial.html" "$DEPLOY_DIR/index.html"
+(cd "$DEPLOY_DIR" && zip -q site.zip index.html)
+
+curl -s \
+  -H "Content-Type: application/zip" \
+  -H "Authorization: Bearer $NETLIFY_AUTH_TOKEN" \
+  --data-binary "@$DEPLOY_DIR/site.zip" \
+  "https://api.netlify.com/api/v1/sites" | \
+python3 -c "import sys,json; d=json.load(sys.stdin); print('Published at:', d.get('ssl_url', d.get('url', 'Error: ' + str(d))))"
+
+rm -rf "$DEPLOY_DIR"
+```
+
+Use this when: you want a quick shareable link, content is non-sensitive, speed matters.
+
+---
+
+### Option C — GitHub Pages (fully public, permanent)
+
+**Requires**: `git` + `gh` CLI (`brew install gh && gh auth login` — one-time browser OAuth).
+
+```bash
+TUTORIAL_FILE="$HOME/[topic]-tutorial/src/tutorial.html"
+REPO_NAME="[topic]-tutorial"
+
+DEPLOY_DIR=$(mktemp -d)
+cp "$TUTORIAL_FILE" "$DEPLOY_DIR/index.html"
+cd "$DEPLOY_DIR"
+git init -q
+git add index.html
+git commit -q -m "Deploy tutorial"
+gh repo create "$REPO_NAME" --public --source=. --push
+gh api -X POST "/repos/{owner}/$REPO_NAME/pages" \
+  -f "source[branch]=main" \
+  -f "source[path]=/"
+echo "Published at: https://$(gh api user -q '.login').github.io/$REPO_NAME/"
+echo "(Takes 1–5 minutes to go live)"
+cd - > /dev/null && rm -rf "$DEPLOY_DIR"
+```
+
+Use this when: content is intentionally public, you want a permanent portfolio URL.
+
+---
+
+### Option D — Cloudflare Pages + Access (gated — you control who sees it)
+
+**Requires**: Free Cloudflare account + `wrangler` CLI. The deploy is one command; Access gating is a one-time dashboard setup.
+
+**Deploy** (one command, live in ~1 minute):
+
+```bash
+# Install wrangler if needed (one-time)
+npm install -g wrangler
+
+# Login to Cloudflare (one-time, opens browser)
+wrangler login
+
+# Deploy — creates a [project].pages.dev URL
+TUTORIAL_DIR="$HOME/[topic]-tutorial/src"
+REPO_NAME="[topic]-tutorial"   # becomes [repo-name].pages.dev
+
+DEPLOY_DIR=$(mktemp -d)
+cp "$TUTORIAL_DIR/tutorial.html" "$DEPLOY_DIR/index.html"
+wrangler pages deploy "$DEPLOY_DIR" --project-name "$REPO_NAME"
+rm -rf "$DEPLOY_DIR"
+```
+
+**Gate it (one-time dashboard setup — takes ~3 minutes):**
+
+After deploying, lock it down at dash.cloudflare.com:
+1. Go to **Zero Trust** → **Access** → **Applications** → **Add an application**
+2. Choose **Self-hosted**
+3. Set the domain to your `[repo-name].pages.dev` URL
+4. Under **Policies**, add a rule: e.g. "Emails ending in `@yourcompany.com`" or list specific email addresses
+5. Save — Cloudflare now shows a login prompt to anyone who visits, and only approved emails get through
+
+From then on, anyone who visits the URL must authenticate via email OTP (or Google/GitHub OAuth if you configure it). No password to share or manage. Free tier supports up to 50 users.
+
+Use this when: you need a URL (not a file), but want to restrict access to specific people or a domain.
+
+---
+
+## Self-Assessment Against Benchmark (REQUIRED AFTER E2E)
+
+After all E2E tests pass and before auto-opening the file, score this tutorial against the benchmark rubric in `~/tutorialinator-benchmark.md`. This is a two-pass process: score → refine → score again.
+
+**Be honest.** The benchmark exists to surface real patterns across tutorials, not to produce flattering scores. Accurate data is more valuable than a high score.
+
+### Step 1: One-Shot Score
+
+Score each dimension using the rubric in Section 3 of `~/tutorialinator-benchmark.md`:
+
+**A — Technical Correctness (25%)**
+Count how many of the 8 required keyframes are present: `fadeUp`, `shake`, `confettiBurst`, `timerArc`, `particleBurst`, `charReveal`, `fadeIn`, `scaleIn`. Verify chapter structure (`div.chapter` count > 0) and brace balance.
+
+**B — Design System Fidelity (25%)**
+Count how many of the 7 required UI elements are present: `--bg` CSS variable, `body::after` noise overlay, Google Fonts link, `.sidebar`, `cursorGlow`, `scroll-progress`, `g-toast`.
+
+**C — Interactive Learning Elements (25%)**
+For each chapter: does it have at least one active challenge element (code sandbox OR interactive widget)? Does it have at least one quiz? Is the XP system present? Is 3D tilt present?
+
+**D — Pedagogical Quality (25%)**
+For each quiz question: could a learner answer it by scanning the 3 paragraphs before it? If yes → recall (L1/L2). If it requires applying knowledge to a new scenario → L3+. Score based on the proportion of L3+ questions.
+
+Calculate: weighted total = (A + B + C + D) / 4
+
+### Step 2: Record One-Shot Result
+
+Append a row to the **One-Shot Benchmark** table in `~/tutorialinator-benchmark.md`:
+
+```
+| [YYYY-MM-DD] | [topic] | [Mode] | [A]/5 | [B]/5 | [C]/5 | [D]/5 | [total]/5 | [weakest dimension and why] |
+```
+
+### Step 3: Refine Based on Lowest Score
+
+Identify your lowest-scoring dimension and make targeted improvements:
+
+- **A < 4**: Find and add missing keyframes; fix structural issues
+- **B < 4**: Add missing UI elements (check each of the 7 against the HTML)
+- **C < 4**: Add or improve challenge elements in chapters that lack them — if the topic doesn't warrant a code sandbox, build an appropriate interactive widget instead
+- **D < 3**: Rewrite recall-level quiz questions — replace fact-retrieval questions with scenario-based ones where the learner must apply knowledge to a situation not described verbatim in the tutorial text
+
+After editing the HTML, run an abbreviated E2E check: console errors + quiz click test + challenge element test.
+
+### Step 4: Two-Shot Score and Record
+
+Re-score all 4 dimensions. Append a row to the **Two-Shot Benchmark** table in `~/tutorialinator-benchmark.md`:
+
+```
+| [YYYY-MM-DD] | [topic] | [Mode] | [A]/5 | [B]/5 | [C]/5 | [D]/5 | [total]/5 | [what you changed] |
+```
 
 ---
 
@@ -1375,11 +1628,35 @@ Example: `/tutorialinator "teach me TypeScript generics"` → `~/typescript-gene
 # Deep Research Mode
 /tutorialinator "Research Rust ownership thoroughly and teach me"
 /tutorialinator "Deep dive into WebAssembly and create a tutorial"
+
+# Audio Mode
+/tutorialinator ~/recordings/podcast-episode-42.mp3
+/tutorialinator ~/voice-memos/meeting-notes.m4a
+
+# Codebase Mode
+/tutorialinator ~/projects/my-open-source-tool/
+/tutorialinator "explain this codebase ~/work/api-server/"
+
+# Slide Deck Mode
+/tutorialinator ~/presentations/conference-talk.pptx
+/tutorialinator ~/lectures/intro-to-ml.pdf  # with "slides" context
 ```
 
 ---
 
 ## Remember
+
+## CRITICAL: Never Fabricate Content
+
+**You MUST NOT invent, assume, or extrapolate content that is not directly evidenced by the source material (video, transcript, frames, provided URLs, or user statements).**
+
+If a video shows an app name but no description → list the name only, or ask the user.
+If a transcript mentions a tool was used but not which project it applied to → do not assign it.
+If you have 5 projects clearly covered and 7 more visible in a screenshot → show the 5 with real info, and either ask about the rest or label them "details unknown."
+
+**The rule:** If you didn't see it or hear it, you don't write it. Every claim in the tutorial must trace back to a specific source moment. When in doubt, ask. An honest gap is always better than a confident lie.
+
+This applies to: app descriptions, tool attributions, timelines, quotes, motivations, outcomes, and any detail presented as fact.
 
 **Quality over speed.**
 

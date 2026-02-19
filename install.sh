@@ -472,6 +472,8 @@ panel_row "${DIM}${S_DOT} pydantic        Data validation${NC}" 60
 panel_row "${DIM}${S_DOT} httpx           HTTP client${NC}" 60
 panel_row "${DIM}${S_DOT} beautifulsoup4  HTML parsing${NC}" 60
 panel_row "${DIM}${S_DOT} rich            Terminal formatting${NC}" 60
+panel_row "${DIM}${S_DOT} python-pptx     PowerPoint extraction${NC}" 60
+panel_row "${DIM}${S_DOT} PyMuPDF         PDF rendering & text${NC}" 60
 panel_bottom 60
 
 # ─────────────────────────────────────────────────────────────────────────────

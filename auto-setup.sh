@@ -34,7 +34,7 @@ if [ ! -d "$MCP_DIR/venv" ]; then
 elif [ ! -f "$MCP_DIR/venv/bin/python" ]; then
     echo -e "${YELLOW}⚠${NC}  Python not found in venv"
     NEEDS_INSTALL=1
-elif ! "$MCP_DIR/venv/bin/python" -c "import mcp; import whisper; import fastmcp" &>/dev/null; then
+elif ! "$MCP_DIR/venv/bin/python" -c "import mcp; import whisper; import fastmcp; import pptx; import fitz" &>/dev/null; then
     echo -e "${YELLOW}⚠${NC}  Dependencies not installed or broken"
     NEEDS_INSTALL=1
 fi
@@ -85,7 +85,7 @@ if [ $NEEDS_INSTALL -eq 1 ]; then
     fi
 
     # Verify install
-    if "$MCP_DIR/venv/bin/python" -c "import mcp; import whisper" &>/dev/null; then
+    if "$MCP_DIR/venv/bin/python" -c "import mcp; import whisper; import pptx; import fitz" &>/dev/null; then
         echo -e "${GREEN}✓${NC} Dependencies verified"
     else
         echo -e "${RED}✗${NC} Installation verification failed!"

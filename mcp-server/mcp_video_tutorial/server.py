@@ -546,6 +546,114 @@ def generate_chapters(
 
 
 @mcp.tool()
+def extract_slides(file_path: str) -> dict[str, Any]:
+    """
+    Extract slide content from presentation files (.pptx or .pdf).
+
+    Args:
+        file_path: Path to a .pptx or .pdf file
+
+    Returns:
+        List of slide dicts with slide_number, title, body, speaker_notes, and image_b64 (PDF only)
+    """
+    try:
+        p = Path(file_path)
+        if not p.exists():
+            return {"success": False, "error": f"File not found: {file_path}"}
+
+        suffix = p.suffix.lower()
+
+        if suffix == ".pptx":
+            try:
+                from pptx import Presentation
+            except ImportError:
+                return {
+                    "success": False,
+                    "error": "python-pptx not installed. Install with: pip install python-pptx",
+                }
+
+            prs = Presentation(str(p))
+            slides = []
+            for i, slide in enumerate(prs.slides, start=1):
+                title = ""
+                body_parts = []
+                title_shape_id = slide.shapes.title.shape_id if slide.shapes.title else None
+                for shape in slide.shapes:
+                    if shape.has_text_frame:
+                        if title_shape_id is not None and shape.shape_id == title_shape_id:
+                            title = shape.text_frame.text
+                        else:
+                            body_parts.append(shape.text_frame.text)
+
+                # Fallback: if title still empty, try the title placeholder directly
+                if not title and slide.shapes.title:
+                    title = slide.shapes.title.text
+
+                notes = ""
+                if slide.has_notes_slide and slide.notes_slide.notes_text_frame:
+                    notes = slide.notes_slide.notes_text_frame.text
+
+                slides.append({
+                    "slide_number": i,
+                    "title": title,
+                    "body": "\n".join(body_parts),
+                    "speaker_notes": notes,
+                    "image_b64": None,
+                })
+
+            return {"success": True, "slides": slides, "slide_count": len(slides)}
+
+        elif suffix == ".pdf":
+            try:
+                import fitz  # PyMuPDF
+            except ImportError:
+                return {
+                    "success": False,
+                    "error": "PyMuPDF not installed. Install with: pip install PyMuPDF",
+                }
+
+            import base64
+
+            doc = fitz.open(str(p))
+            slides = []
+            for i, page in enumerate(doc, start=1):
+                text = page.get_text().strip()
+
+                # Render page to JPEG
+                pix = page.get_pixmap(dpi=150)
+                img_bytes = pix.tobytes("jpeg")
+                img_b64 = base64.b64encode(img_bytes).decode("ascii")
+
+                # Use first line as title heuristic
+                lines = text.split("\n") if text else []
+                title = lines[0] if lines else ""
+                body = "\n".join(lines[1:]) if len(lines) > 1 else ""
+
+                slides.append({
+                    "slide_number": i,
+                    "title": title,
+                    "body": body,
+                    "speaker_notes": "",
+                    "image_b64": img_b64,
+                })
+            doc.close()
+
+            return {"success": True, "slides": slides, "slide_count": len(slides)}
+
+        else:
+            return {
+                "success": False,
+                "error": f"Unsupported file format: {suffix}. Supported: .pptx, .pdf",
+            }
+
+    except Exception as e:
+        return {
+            "success": False,
+            "error": f"Slide extraction failed: {str(e)}",
+        }
+
+
+@mcp.tool()
 def get_video_metadata(video_path: str) -> dict[str, Any]:
     """
     Extract comprehensive metadata from video file.

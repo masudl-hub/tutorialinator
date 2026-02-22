@@ -1,5 +1,11 @@
 # Tutorialinator
 
+You've built something worth knowing. Maybe it's a custom workflow, a tool you wrote, a process your team spent months perfecting. Now comes the part everyone dreads: sharing it in a way that actually transfers the knowledge.
+
+Videos are passive — you watch, but you don't practice. Blog posts are static — you read, but nothing responds to you. What's missing is the middle ground: something you can interact with, make predictions in, get wrong, and try again.
+
+That's what a Tutorialinator tutorial is.
+
 ```
      ╔═══════════════════════════════════════════════════════════════╗
      ║                                                               ║

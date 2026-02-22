@@ -1,14 +1,23 @@
 # Virtual environment
 mcp-server/venv/
 
-# Python egg-info (auto-generated)
+# Python
 mcp-server/*.egg-info/
 mcp-server/mcp_video_tutorial.egg-info/
-
-# Python bytecode
 __pycache__/
+*.egg-info/
 *.pyc
 *.pyo
 
 # OS files
 .DS_Store
+
+# Backups
+*.bak
+
+# Goose integration files
+GOOSE_INSTALLATION.md
+GOOSE_UI_SETUP.txt
+HOW_TO_MAKE_GOOSE_FOLLOW_SKILL.md
+extension.json
+goose-extension.yaml

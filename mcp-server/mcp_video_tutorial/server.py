@@ -22,6 +22,18 @@ mcp = FastMCP("tutorialinator")
 # Skill directory: two levels up from this file → ~/.claude/skills/tutorialinator/
 SKILL_DIR = Path(__file__).resolve().parent.parent.parent
 
+# Expose SKILL.md as an MCP resource
+SKILL_DIR = Path(__file__).parent.parent.parent
+SKILL_FILE = SKILL_DIR / "SKILL.md"
+
+@mcp.resource("skill://tutorialinator/instructions")
+def get_skill_instructions() -> str:
+    """Get the complete Tutorialinator skill instructions."""
+    if not SKILL_FILE.exists():
+        return "ERROR: SKILL.md not found"
+    return SKILL_FILE.read_text()
+
+
 
 def resolve_video_path(video_path: str) -> Path:
     """

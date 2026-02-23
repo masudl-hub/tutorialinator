@@ -1,0 +1,2499 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Tutorialinator — Build Tutorials That Teach</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+/* 1. Reset & CSS Variables */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#000;--s1:#060606;--s2:#0a0a0a;--s3:#111;--s4:#1a1a1a;
+  --border:#1e1e1e;--border-h:#333;--border-a:#fff;
+  --t1:#fff;--t2:#b0b0b0;--t3:#666;--t4:#444;
+  --purple:#8b5cf6;--cyan:#00d4ff;--green:#22c55e;--amber:#f59e0b;
+  --red:#ef4444;
+  --mono:'JetBrains Mono',monospace;--sans:'Inter',-apple-system,sans-serif;
+  --ease:cubic-bezier(0.22,1,0.36,1);--ease-back:cubic-bezier(0.34,1.56,0.64,1);
+  --ease-spring:cubic-bezier(0.175,0.885,0.32,1.275);
+  --glass-bg:rgba(255,255,255,0.04);--glass-border:rgba(255,255,255,0.06);--glass-blur:24px;
+  --shadow-card:0 1px 2px rgba(0,0,0,0.5),0 4px 12px rgba(0,0,0,0.4),0 16px 48px rgba(0,0,0,0.3);
+  --shadow-card-hover:0 2px 4px rgba(0,0,0,0.5),0 8px 24px rgba(0,0,0,0.5),0 24px 64px rgba(0,0,0,0.4);
+  --glow-inner:inset 0 1px 0 rgba(255,255,255,0.06);
+}
+/* 2. Base */
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--t1);font-family:var(--sans);line-height:1.7;-webkit-font-smoothing:antialiased;font-feature-settings:'ss01';overflow-x:hidden}
+/* 3. Noise */
+body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:99999;opacity:0.028;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");background-size:200px 200px}
+/* 4. Glass */
+.glass{background:var(--glass-bg);backdrop-filter:blur(var(--glass-blur));-webkit-backdrop-filter:blur(var(--glass-blur));border:1px solid var(--glass-border)}
+/* 5. Keyframes */
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes slideInRight{from{opacity:0;transform:translateX(40px)}to{opacity:1;transform:translateX(0)}}
+@keyframes slideInLeft{from{opacity:0;transform:translateX(-20px)}to{opacity:1;transform:translateX(0)}}
+@keyframes scaleIn{from{opacity:0;transform:scale(0.9)}to{opacity:1;transform:scale(1)}}
+@keyframes charReveal{from{opacity:0;transform:translateY(40px) rotateX(-40deg)}to{opacity:1;transform:translateY(0) rotateX(0)}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}
+@keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
+@keyframes shake{0%,100%{transform:translateX(0)}15%,45%,75%{transform:translateX(-4px)}30%,60%,90%{transform:translateX(4px)}}
+@keyframes confettiBurst{0%{opacity:1;transform:translate(0,0) scale(1)}100%{opacity:0;transform:translate(var(--tx),var(--ty)) scale(0)}}
+@keyframes timerArc{from{stroke-dashoffset:0}to{stroke-dashoffset:62.83}}
+@keyframes particleBurst{0%{opacity:1;transform:translate(0,0) scale(1)}100%{opacity:0;transform:translate(var(--tx),var(--ty)) scale(0.3)}}
+@keyframes borderPulse{0%,100%{box-shadow:0 0 0 0 rgba(255,255,255,0.2)}50%{box-shadow:0 0 0 4px rgba(255,255,255,0.06)}}
+@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+/* 6. Scroll progress */
+.scroll-progress{position:fixed;top:0;right:0;width:2px;height:0%;background:var(--t1);z-index:9998;transition:height 0.1s linear}
+/* 7. Toast */
+.g-toast{position:fixed;bottom:24px;right:24px;z-index:9997;display:flex;align-items:center;gap:12px;padding:12px 18px;border-radius:12px;background:var(--s3);border:1px solid var(--border-h);box-shadow:var(--shadow-card);transform:translateX(120%);transition:transform 0.4s var(--ease-back);max-width:320px}
+.g-toast.show{transform:translateX(0)}
+.g-toast-icon{width:20px;height:20px;background:var(--green);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.g-toast-icon svg{width:12px;height:12px;fill:none;stroke:#000;stroke-width:2.5}
+#gToastTxt{font-size:13px;color:var(--t1);flex:1}
+.g-toast-timer{width:20px;height:20px;flex-shrink:0;transform:rotate(-90deg)}
+.g-toast-timer circle{fill:none;stroke:var(--border-h);stroke-width:2}
+.g-toast-timer .timer-fill{stroke:var(--t3);stroke-dasharray:62.83;stroke-dashoffset:62.83}
+.g-toast.show .timer-fill{animation:timerArc 2.8s linear forwards}
+/* 8. Sidebar */
+.sidebar{position:fixed;left:20px;top:50%;transform:translateY(-50%);z-index:9000;width:52px;display:flex;flex-direction:column;align-items:center;gap:8px;padding:16px 8px;border-radius:24px;transition:width 0.3s var(--ease)}
+.sidebar-brand{font-family:var(--mono);font-size:8px;color:var(--t4);letter-spacing:0.1em;text-transform:uppercase;writing-mode:vertical-rl;transform:rotate(180deg);margin-bottom:4px;opacity:0.6}
+.sidebar-chapters{display:flex;flex-direction:column;gap:6px;align-items:center}
+.ch-dot{width:28px;height:28px;border-radius:50%;border:1px solid var(--border);background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:10px;color:var(--t4);transition:all 0.2s var(--ease);position:relative}
+.ch-dot:hover{border-color:var(--border-h);color:var(--t2)}
+.ch-dot.active{border-color:var(--t1);color:var(--t1);background:var(--s3)}
+.ch-dot.done{border-color:var(--green);color:var(--green)}
+.sidebar-divider{width:1px;height:16px;background:var(--border);margin:2px 0}
+.sidebar-sections{display:flex;flex-direction:column;gap:4px;align-items:center}
+.s-dot{width:6px;height:6px;border-radius:50%;background:var(--border-h);cursor:pointer;transition:all 0.2s;flex-shrink:0}
+.s-dot:hover,.s-dot.active{background:var(--t2)}
+.s-dot.visited{background:var(--t4)}
+.sidebar-xp{display:flex;align-items:center;gap:4px;margin-top:4px}
+.sidebar-xp-dot{width:6px;height:6px;border-radius:50%;background:var(--amber)}
+#gXpVal{font-family:var(--mono);font-size:10px;color:var(--amber)}
+/* 9. Chapters */
+.chapter{display:none;min-height:100vh}
+.chapter.active{display:block;animation:fadeIn 0.4s var(--ease)}
+/* 10. Hero */
+.hero{min-height:100vh;display:flex;flex-direction:column;justify-content:center;padding:0 clamp(40px,8vw,120px);position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 60% 50% at 30% 50%,rgba(139,92,246,0.08) 0%,transparent 70%),radial-gradient(ellipse 40% 60% at 80% 30%,rgba(0,212,255,0.05) 0%,transparent 60%);pointer-events:none}
+.hero-eyebrow{font-family:var(--mono);font-size:11px;color:var(--purple);letter-spacing:0.2em;text-transform:uppercase;margin-bottom:24px;opacity:0;animation:fadeUp 0.6s var(--ease) 0.1s forwards}
+.hero-title{font-size:clamp(56px,10vw,130px);font-weight:900;line-height:0.95;letter-spacing:-4px;margin-bottom:28px;perspective:800px}
+.hero-title em{color:var(--t3);font-style:normal}
+.hero-title .char{display:inline-block;opacity:0;animation:charReveal 0.5s var(--ease-back) forwards;transform-origin:bottom center}
+.hero-desc{font-size:18px;color:var(--t2);max-width:540px;line-height:1.6;margin-bottom:36px;opacity:0;animation:fadeUp 0.6s var(--ease) 0.4s forwards}
+.hero-chips{display:flex;gap:10px;flex-wrap:wrap;opacity:0;animation:fadeUp 0.6s var(--ease) 0.55s forwards}
+.hero-chip{display:flex;align-items:center;gap:8px;padding:8px 16px;border-radius:999px;background:var(--glass-bg);border:1px solid var(--glass-border);font-size:12px;color:var(--t2);font-family:var(--mono)}
+.hero-chip-icon{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.hero-chip-icon.purple{background:var(--purple)}
+.hero-chip-icon.cyan{background:var(--cyan)}
+.hero-chip-icon.green{background:var(--green)}
+.hero-chip-icon.amber{background:var(--amber)}
+.hero-meta{margin-top:32px;opacity:0;animation:fadeUp 0.6s var(--ease) 0.65s forwards}
+.hero-meta-line{font-family:var(--mono);font-size:11px;color:var(--t4);display:flex;align-items:center;gap:8px}
+.hero-meta-line::before{content:'';display:block;width:20px;height:1px;background:var(--t4)}
+/* 11. Sections */
+.sect{padding:80px clamp(40px,8vw,120px);opacity:0;transform:translateY(20px);transition:opacity 0.6s var(--ease),transform 0.6s var(--ease)}
+.sect.vis{opacity:1;transform:translateY(0)}
+.sect-tag{display:inline-block;font-family:var(--mono);font-size:10px;letter-spacing:0.15em;text-transform:uppercase;color:var(--purple);border-left:2px solid var(--purple);padding-left:10px;margin-bottom:20px;transition:all 0.3s 0.05s}
+.sect-tag.cyan{color:var(--cyan);border-color:var(--cyan)}
+.sect-tag.green{color:var(--green);border-color:var(--green)}
+.sect-tag.amber{color:var(--amber);border-color:var(--amber)}
+.sect h2{font-size:clamp(28px,4vw,48px);font-weight:800;letter-spacing:-2px;line-height:1.1;margin-bottom:20px;transition:all 0.3s 0.12s}
+.sect h2 .accent{color:var(--purple)}
+.sect h2 .accent-c{color:var(--cyan)}
+.sect h2 .accent-g{color:var(--green)}
+.sect h2 .accent-a{color:var(--amber)}
+.body{font-size:17px;color:var(--t2);max-width:620px;line-height:1.75;transition:all 0.3s 0.2s}
+.body strong{color:var(--t1);font-weight:600}
+.body code{font-family:var(--mono);font-size:14px;background:var(--s3);padding:2px 7px;border-radius:4px;color:var(--cyan)}
+.body a{color:var(--purple);text-decoration:none}
+.body a:hover{text-decoration:underline}
+.div{height:1px;margin:0 clamp(40px,8vw,120px);background:linear-gradient(90deg,transparent,var(--border),transparent)}
+/* 12. Cards */
+.card{background:var(--s2);border:1px solid var(--border);border-radius:16px;padding:28px;box-shadow:var(--shadow-card);transition:border-color 0.3s,box-shadow 0.3s,transform 0.3s;transform-style:preserve-3d;will-change:transform}
+.card:hover{border-color:var(--border-h);box-shadow:var(--shadow-card-hover)}
+.card-label{font-family:var(--mono);font-size:10px;color:var(--t4);letter-spacing:0.15em;text-transform:uppercase;margin-bottom:16px}
+/* 13. Bento */
+.bento{display:grid;gap:12px;margin-top:28px}
+.bento-modes{grid-template-columns:1fr 1fr;grid-template-rows:auto auto}
+.bento-item{background:var(--s2);border:1px solid var(--border);border-radius:14px;padding:24px;transition:border-color 0.2s,background 0.2s}
+.bento-item:hover{border-color:var(--border-h);background:var(--s3)}
+.bento-item.span-full{grid-column:1/-1}
+.bento-item.span-2{grid-column:span 2}
+.bento-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;margin-bottom:14px;font-size:18px}
+.bento-icon.p{background:rgba(139,92,246,0.15)}
+.bento-icon.c{background:rgba(0,212,255,0.15)}
+.bento-icon.g{background:rgba(34,197,94,0.15)}
+.bento-icon.a{background:rgba(245,158,11,0.15)}
+.bento-item h3{font-size:15px;font-weight:700;margin-bottom:6px;letter-spacing:-0.3px}
+.bento-item p{font-size:13px;color:var(--t3);line-height:1.5}
+.bento-item code{font-family:var(--mono);font-size:12px;color:var(--cyan)}
+/* 14. Mode Challenge Widget */
+.mode-challenge{margin-top:28px}
+.mc-progress{display:flex;gap:8px;margin-bottom:24px}
+.mc-pip{height:3px;flex:1;border-radius:2px;background:var(--border)}
+.mc-pip.done{background:var(--green)}
+.mc-pip.active{background:var(--purple)}
+.mc-scenario{background:var(--s3);border:1px solid var(--border);border-radius:14px;padding:24px;margin-bottom:20px;min-height:80px}
+.mc-scenario-label{font-family:var(--mono);font-size:10px;color:var(--t4);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:10px}
+.mc-scenario-txt{font-size:15px;color:var(--t1);line-height:1.6}
+.mc-options{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
+.mc-btn{padding:14px 16px;border-radius:12px;border:1px solid var(--border);background:transparent;color:var(--t2);font-size:13px;font-family:var(--sans);cursor:pointer;transition:all 0.2s;text-align:left;line-height:1.4}
+.mc-btn:hover:not(:disabled){border-color:var(--border-h);color:var(--t1);background:var(--s3);transform:translateY(-1px)}
+.mc-btn.correct{border-color:var(--green);background:rgba(34,197,94,0.08);color:var(--green)}
+.mc-btn.wrong{border-color:var(--red);background:rgba(239,68,68,0.08);color:var(--red);animation:shake 0.4s ease}
+.mc-btn:disabled{cursor:default}
+.mc-feedback{background:var(--s3);border-left:3px solid var(--green);border-radius:0 10px 10px 0;padding:16px 20px;font-size:14px;color:var(--t2);line-height:1.6;display:none;animation:fadeUp 0.3s var(--ease)}
+.mc-feedback.show{display:block}
+.mc-feedback.wrong-fb{border-color:var(--amber)}
+.mc-next{margin-top:14px;padding:10px 20px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--t2);font-size:13px;font-family:var(--sans);cursor:pointer;transition:all 0.2s;display:none}
+.mc-next.show{display:inline-flex;align-items:center;gap:6px}
+.mc-next:hover{border-color:var(--border-h);color:var(--t1)}
+/* 15. Pipeline Stepper */
+.pipeline-stepper{margin-top:28px}
+.pipe-track{display:flex;flex-direction:column;gap:0}
+.pipe-step{display:flex;gap:0;cursor:pointer;position:relative}
+.pipe-step-left{display:flex;flex-direction:column;align-items:center;width:40px;flex-shrink:0}
+.pipe-dot{width:32px;height:32px;border-radius:50%;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:11px;color:var(--t4);transition:all 0.3s;flex-shrink:0;background:var(--bg)}
+.pipe-line{width:2px;flex:1;min-height:20px;background:var(--border);margin:4px 0}
+.pipe-step:last-child .pipe-line{display:none}
+.pipe-content{padding:0 0 24px 16px;flex:1}
+.pipe-title{font-size:14px;font-weight:600;color:var(--t3);transition:color 0.3s;margin-bottom:0}
+.pipe-detail{font-size:13px;color:var(--t3);line-height:1.5;max-height:0;overflow:hidden;transition:max-height 0.4s var(--ease),opacity 0.3s;opacity:0;margin-top:0}
+.pipe-tag{display:inline-block;font-family:var(--mono);font-size:10px;padding:2px 8px;border-radius:4px;margin-top:8px;opacity:0;transition:opacity 0.3s}
+.pipe-step.active .pipe-dot{border-color:var(--purple);color:var(--purple);background:rgba(139,92,246,0.1)}
+.pipe-step.active .pipe-title{color:var(--t1)}
+.pipe-step.active .pipe-detail{max-height:120px;opacity:1;margin-top:8px}
+.pipe-step.active .pipe-tag{opacity:1}
+.pipe-step.done .pipe-dot{border-color:var(--green);color:var(--green);background:rgba(34,197,94,0.08)}
+.pipe-step.done .pipe-line{background:var(--green)}
+.pipe-step.done .pipe-title{color:var(--t2)}
+.pipe-btns{display:flex;gap:10px;margin-top:8px}
+.pipe-btn{padding:8px 18px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--t2);font-size:12px;font-family:var(--sans);cursor:pointer;transition:all 0.2s}
+.pipe-btn:hover{border-color:var(--border-h);color:var(--t1)}
+.pipe-btn.primary{border-color:var(--purple);color:var(--purple)}
+.pipe-btn.primary:hover{background:rgba(139,92,246,0.1)}
+/* 16. MCP Diagnostic */
+.mcp-diag{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px}
+.mcp-symptom{background:var(--s3);border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:20px}
+.mcp-symptom-label{font-family:var(--mono);font-size:10px;color:var(--amber);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:8px}
+.mcp-symptom-txt{font-size:14px;color:var(--t1);line-height:1.6}
+.mcp-card{border:1px solid var(--border);border-radius:12px;padding:18px;cursor:pointer;transition:all 0.2s;background:transparent}
+.mcp-card:hover:not(:disabled){border-color:var(--border-h);transform:translateY(-2px)}
+.mcp-card h4{font-size:14px;font-weight:600;margin-bottom:6px}
+.mcp-card p{font-size:12px;color:var(--t3);line-height:1.5}
+.mcp-card.correct{border-color:var(--green);background:rgba(34,197,94,0.06)}
+.mcp-card.wrong{border-color:var(--red);background:rgba(239,68,68,0.06);animation:shake 0.4s ease}
+.mcp-feedback{background:var(--s3);border-left:3px solid var(--green);border-radius:0 10px 10px 0;padding:16px 20px;font-size:13px;color:var(--t2);line-height:1.6;display:none;margin-top:12px}
+.mcp-feedback.show{display:block;animation:fadeUp 0.3s var(--ease)}
+/* 17. Parsons Problem */
+.parsons{margin-top:16px}
+.parsons-bank,.parsons-target{border:1px solid var(--border);border-radius:12px;padding:14px;min-height:80px}
+.parsons-label{font-family:var(--mono);font-size:10px;color:var(--t4);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:10px}
+.parsons-item{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:8px;border:1px solid var(--border);background:var(--s3);margin-bottom:8px;cursor:grab;font-size:13px;color:var(--t2);user-select:none;transition:all 0.15s}
+.parsons-item:hover{border-color:var(--border-h);color:var(--t1)}
+.parsons-item.dragging{opacity:0.4}
+.parsons-item.over{border-color:var(--purple)}
+.parsons-item .drag-handle{color:var(--t4);font-size:10px;flex-shrink:0}
+.parsons-item .step-num{font-family:var(--mono);font-size:10px;color:var(--t4);flex-shrink:0;min-width:18px}
+.parsons-check{margin-top:14px;padding:8px 18px;border-radius:8px;border:1px solid var(--purple);background:transparent;color:var(--purple);font-size:12px;font-family:var(--sans);cursor:pointer;transition:all 0.2s}
+.parsons-check:hover{background:rgba(139,92,246,0.1)}
+.parsons-result{margin-top:12px;padding:14px 18px;border-radius:10px;font-size:13px;line-height:1.6;display:none}
+.parsons-result.show{display:block;animation:fadeUp 0.3s var(--ease)}
+.parsons-result.pass{background:rgba(34,197,94,0.08);border:1px solid var(--green);color:var(--green)}
+.parsons-result.fail{background:rgba(239,68,68,0.08);border:1px solid var(--red);color:var(--t2)}
+/* 18. Terminal Emulator */
+.terminal{background:#0a0f0a;border:1px solid #1a2a1a;border-radius:12px;overflow:hidden;margin-top:16px}
+.terminal-bar{display:flex;align-items:center;gap:8px;padding:12px 16px;background:#0d150d;border-bottom:1px solid #1a2a1a}
+.term-dot{width:10px;height:10px;border-radius:50%}
+.term-dot.r{background:#ff5f57}
+.term-dot.y{background:#febc2e}
+.term-dot.g{background:#28c840}
+.terminal-title{font-family:var(--mono);font-size:11px;color:#4a7a4a;margin-left:8px}
+.terminal-body{padding:16px;font-family:var(--mono);font-size:13px;line-height:1.8;min-height:120px;max-height:280px;overflow-y:auto}
+.term-line{display:block}
+.term-prompt{color:#28c840}
+.term-cmd{color:#e2e8f0}
+.term-output{color:#64748b}
+.term-highlight{color:#00d4ff}
+.term-comment{color:#4a7a4a}
+.term-tabs{display:flex;gap:0;border-bottom:1px solid #1a2a1a}
+.term-tab{padding:8px 16px;font-family:var(--mono);font-size:11px;color:#4a7a4a;cursor:pointer;border-bottom:2px solid transparent;transition:all 0.15s}
+.term-tab.active{color:#28c840;border-bottom-color:#28c840}
+.term-tab:hover:not(.active){color:#6aa76a}
+/* 19. Fix Invocation Challenge */
+.fix-inv{margin-top:16px}
+.inv-display{background:var(--s3);border:1px solid var(--border);border-radius:12px;padding:20px;font-family:var(--mono);font-size:13px;line-height:1.8;position:relative;overflow:hidden}
+.inv-line{display:flex;align-items:baseline;gap:0}
+.inv-segment{cursor:pointer;border-radius:3px;padding:0 2px;transition:all 0.15s;position:relative}
+.inv-segment:hover{background:rgba(255,255,255,0.06)}
+.inv-segment.selected{background:rgba(139,92,246,0.15);outline:1px solid var(--purple)}
+.inv-segment.broken{text-decoration:underline wavy #ef4444 2px}
+.inv-segment.fixed{background:rgba(34,197,94,0.1);color:var(--green)}
+.inv-issues{display:flex;flex-direction:column;gap:10px;margin-top:16px}
+.inv-issue{display:flex;gap:12px;align-items:flex-start}
+.inv-issue-num{width:22px;height:22px;border-radius:50%;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:10px;color:var(--t4);flex-shrink:0;margin-top:2px}
+.inv-issue-text{font-size:13px;color:var(--t3);line-height:1.5;flex:1}
+.inv-fix-btn{margin-top:4px;font-family:var(--mono);font-size:10px;color:var(--cyan);background:none;border:none;cursor:pointer;padding:0;transition:color 0.2s}
+.inv-fix-btn:hover{color:var(--t1)}
+/* 20. Code sandbox */
+.sb-bar{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--border)}
+.sb-file{display:flex;align-items:center;gap:8px;font-family:var(--mono);font-size:12px;color:var(--t3)}
+.sb-dot{width:8px;height:8px;border-radius:50%}
+.sb-dot.live{background:var(--green);animation:pulse 2s ease infinite}
+.sb-btns{display:flex;gap:8px}
+.sb-btn-ghost{padding:6px 14px;border-radius:7px;border:1px solid var(--border);background:transparent;color:var(--t3);font-size:12px;font-family:var(--mono);cursor:pointer;transition:all 0.2s}
+.sb-btn-ghost:hover{border-color:var(--border-h);color:var(--t2)}
+.sb-btn-run{display:flex;align-items:center;gap:6px;padding:6px 14px;border-radius:7px;border:1px solid var(--purple);background:rgba(139,92,246,0.1);color:var(--purple);font-size:12px;font-family:var(--mono);cursor:pointer;transition:all 0.2s}
+.sb-btn-run:hover{background:rgba(139,92,246,0.2)}
+.sb-btn-run svg{width:10px;height:10px;fill:currentColor}
+.sb-panels{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.sb-editor,.sb-output{display:flex;flex-direction:column;gap:8px}
+.sb-label{font-family:var(--mono);font-size:10px;color:var(--t4);letter-spacing:0.1em;text-transform:uppercase}
+.sb-code-wrap{display:flex;background:var(--s3);border:1px solid var(--border);border-radius:8px;overflow:hidden;flex:1}
+.sb-gutter{font-family:var(--mono);font-size:13px;line-height:1.7;color:var(--t4);text-align:right;padding:12px 8px 12px 12px;user-select:none;min-width:32px;white-space:pre;border-right:1px solid var(--border)}
+.sb-code-wrap textarea{flex:1;background:transparent;border:none;outline:none;padding:12px;font-family:var(--mono);font-size:13px;color:var(--t2);line-height:1.7;resize:none;min-height:140px}
+.sb-output iframe{flex:1;border:1px solid var(--border);border-radius:8px;background:#fff;min-height:140px}
+/* 21. Prompt quality scorer */
+.prompt-scorer{margin-top:16px}
+.ps-prompts{display:flex;flex-direction:column;gap:12px;margin-bottom:20px}
+.ps-prompt{border:1px solid var(--border);border-radius:12px;padding:16px 20px;cursor:pointer;transition:all 0.2s;background:transparent}
+.ps-prompt:hover{border-color:var(--border-h);background:var(--s3)}
+.ps-prompt.selected{border-color:var(--purple);background:rgba(139,92,246,0.06)}
+.ps-prompt-label{font-family:var(--mono);font-size:10px;color:var(--t4);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:8px}
+.ps-prompt-text{font-family:var(--mono);font-size:12px;color:var(--t2);line-height:1.6}
+.ps-criteria{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:16px}
+.ps-crit{border:1px solid var(--border);border-radius:10px;padding:14px;background:var(--s3)}
+.ps-crit-name{font-size:12px;font-weight:600;margin-bottom:8px}
+.ps-bar-track{height:4px;background:var(--border);border-radius:2px;overflow:hidden}
+.ps-bar-fill{height:100%;border-radius:2px;transition:width 0.5s var(--ease);width:0}
+.ps-score-txt{font-family:var(--mono);font-size:10px;color:var(--t4);margin-top:6px}
+/* 22. Progressive Build */
+.prog-build{margin-top:16px}
+.pb-rounds{display:flex;gap:8px;margin-bottom:20px}
+.pb-round{padding:6px 16px;border-radius:999px;border:1px solid var(--border);font-family:var(--mono);font-size:11px;color:var(--t4);cursor:pointer;transition:all 0.2s}
+.pb-round.active{border-color:var(--purple);color:var(--purple);background:rgba(139,92,246,0.08)}
+.pb-round.unlocked:not(.active){border-color:var(--border-h);color:var(--t2)}
+.pb-round.locked{cursor:default;opacity:0.4}
+.pb-display{background:var(--s3);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:16px}
+.pb-prompt-text{font-family:var(--mono);font-size:13px;color:var(--t2);line-height:1.8;white-space:pre-wrap}
+.pb-improvements{display:flex;flex-direction:column;gap:8px;margin-top:16px}
+.pb-impr{display:flex;align-items:flex-start;gap:10px;font-size:13px;color:var(--green);opacity:0;animation:fadeUp 0.3s var(--ease) forwards}
+.pb-impr::before{content:'+';font-family:var(--mono);font-weight:700;flex-shrink:0;margin-top:2px}
+.pb-score-bar{margin-top:16px}
+.pb-score-label{font-family:var(--mono);font-size:11px;color:var(--t4);margin-bottom:6px}
+.pb-score-track{height:6px;background:var(--border);border-radius:3px;overflow:hidden}
+.pb-score-fill{height:100%;border-radius:3px;transition:width 0.6s var(--ease),background 0.4s}
+/* 23. Quiz */
+.quiz-q{font-size:16px;font-weight:600;line-height:1.5;margin-bottom:20px;color:var(--t1)}
+.quiz-options{display:flex;flex-direction:column;gap:10px}
+.quiz-opt{display:flex;align-items:flex-start;gap:12px;padding:14px 18px;border-radius:12px;border:1px solid var(--border);cursor:pointer;transition:all 0.2s var(--ease);animation:slideInLeft 0.3s var(--ease) both;background:transparent}
+.quiz-opt:hover:not(.disabled){border-color:var(--border-h);transform:translateX(4px)}
+.quiz-opt .opt-letter{font-family:var(--mono);font-size:11px;color:var(--t4);flex-shrink:0;margin-top:2px;min-width:16px}
+.quiz-opt .opt-text{font-size:14px;color:var(--t2);line-height:1.5}
+.quiz-opt.correct{border-color:var(--green);background:rgba(34,197,94,0.06)}
+.quiz-opt.correct .opt-letter{color:var(--green)}
+.quiz-opt.wrong{border-color:var(--red);background:rgba(239,68,68,0.06);animation:shake 0.4s ease}
+.quiz-opt.wrong .opt-letter{color:var(--red)}
+.quiz-opt.disabled{cursor:default}
+.quiz-exp{margin-top:16px;padding:16px 20px;border-radius:10px;border:1px solid var(--border);background:var(--s3);font-size:13px;color:var(--t2);line-height:1.6;display:none;animation:fadeUp 0.4s var(--ease-spring)}
+.quiz-exp.show{display:block}
+.quiz-exp strong{color:var(--t1)}
+/* 24. Chapter end */
+.ch-end{text-align:center;padding:120px 10vw}
+.ch-end h2{font-size:36px;font-weight:800;letter-spacing:-1px;margin-bottom:16px}
+.ch-end p.body{max-width:480px;margin-left:auto;margin-right:auto}
+.ch-end-sub{font-size:13px;font-family:var(--mono);color:var(--t4);margin-top:16px}
+.btn-next{display:inline-flex;align-items:center;gap:10px;padding:16px 32px;border-radius:12px;background:var(--s3);border:1px solid var(--border);color:var(--t1);font-size:15px;font-weight:600;cursor:pointer;transition:all 0.3s var(--ease);margin-top:32px}
+.btn-next:hover{border-color:var(--purple);box-shadow:0 0 0 1px var(--purple);transform:scale(1.03)}
+.btn-next svg{width:16px;height:16px;transition:transform 0.2s}
+.btn-next:hover svg{transform:translateX(3px)}
+/* 25. Cursor glow */
+.cursor-glow{width:300px;height:300px;border-radius:50%;background:radial-gradient(ellipse,rgba(139,92,246,0.12) 0%,transparent 70%);position:fixed;pointer-events:none;z-index:9990;transform:translate(-50%,-50%);transition:opacity 0.3s}
+/* 26. Frame images (video stills) */
+
+
+
+
+
+
+
+
+
+
+/* 27. Install annotation challenge */
+.curl-annotate{margin-top:16px}
+.curl-display{background:#0a0f0a;border:1px solid #1a2a1a;border-radius:12px;padding:20px;font-family:var(--mono);font-size:13px;line-height:2;overflow-x:auto;white-space:nowrap}
+.curl-seg{cursor:pointer;padding:2px 4px;border-radius:4px;transition:all 0.15s;border-bottom:2px solid transparent}
+.curl-seg:hover{background:rgba(255,255,255,0.06)}
+.curl-seg.active{background:rgba(0,212,255,0.1);border-bottom-color:var(--cyan)}
+.curl-seg.explained{background:rgba(34,197,94,0.08);border-bottom-color:var(--green)}
+.curl-explain{margin-top:16px;background:var(--s3);border-left:3px solid var(--cyan);border-radius:0 10px 10px 0;padding:14px 18px;font-size:13px;color:var(--t2);line-height:1.6;display:none}
+.curl-explain.show{display:block;animation:fadeUp 0.2s var(--ease)}
+.curl-explain .ce-flag{font-family:var(--mono);font-size:12px;color:var(--cyan);font-weight:700;margin-bottom:4px}
+.curl-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}
+.curl-chip{padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:var(--s3);font-size:12px;cursor:pointer;transition:all 0.2s;text-align:center}
+.curl-chip:hover{border-color:var(--border-h)}
+.curl-chip.active{border-color:var(--cyan);background:rgba(0,212,255,0.06)}
+.curl-chip.done{border-color:var(--green);background:rgba(34,197,94,0.06);cursor:default}
+.curl-chip-label{font-family:var(--mono);font-size:11px;color:var(--cyan);display:block;margin-bottom:2px}
+.curl-chip-name{font-size:11px;color:var(--t3)}
+/* 28. Misc */
+.mt16{margin-top:16px}
+.mt24{margin-top:24px}
+.mt28{margin-top:28px}
+.tag-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.tag{font-family:var(--mono);font-size:11px;padding:4px 10px;border-radius:6px;background:var(--s3);border:1px solid var(--border);color:var(--t3)}
+.tag.p{border-color:rgba(139,92,246,0.3);color:var(--purple);background:rgba(139,92,246,0.06)}
+.tag.c{border-color:rgba(0,212,255,0.3);color:var(--cyan);background:rgba(0,212,255,0.06)}
+.tag.g{border-color:rgba(34,197,94,0.3);color:var(--green);background:rgba(34,197,94,0.06)}
+.tag.a{border-color:rgba(245,158,11,0.3);color:var(--amber);background:rgba(245,158,11,0.06)}
+
+  /* Repo link card */
+  .repo-link-card{display:flex;align-items:center;gap:16px;padding:16px 20px;background:var(--glass-bg);border:1px solid var(--border);border-radius:12px;text-decoration:none;color:var(--t1);margin-top:24px;transition:border-color .2s,background .2s;}
+  .repo-link-card:hover{border-color:var(--border-h);background:rgba(255,255,255,0.06);}
+  .repo-link-icon{width:22px;height:22px;flex-shrink:0;color:var(--t3);}
+  .repo-link-text{flex:1;min-width:0;}
+  .repo-link-label{font-size:14px;font-weight:600;color:var(--t1);}
+  .repo-link-desc{font-size:12px;color:var(--t3);font-family:var(--mono);margin-top:2px;}
+  .repo-link-arrow{width:16px;height:16px;flex-shrink:0;color:var(--t4);}
+  .repo-link-card:hover .repo-link-arrow{color:var(--purple);}
+/* 29. Blog chapter styles */
+.blog-quote{position:relative;margin:24px 0;padding:20px 24px;background:var(--s2);border-left:3px solid var(--purple);border-radius:0 12px 12px 0;font-style:italic;color:var(--t2);font-size:15px;line-height:1.7}
+.blog-quote cite{display:block;font-style:normal;font-family:var(--mono);font-size:11px;color:var(--t4);margin-top:10px}
+.blog-timeline{display:flex;flex-direction:column;gap:0;margin-top:24px;padding-left:20px;border-left:2px solid var(--border)}
+.tl-item{position:relative;padding:0 0 28px 24px}
+.tl-item::before{content:'';position:absolute;left:-7px;top:4px;width:12px;height:12px;border-radius:50%;border:2px solid var(--purple);background:var(--bg)}
+.tl-item.done::before{border-color:var(--green);background:rgba(34,197,94,0.15)}
+.tl-item:last-child{padding-bottom:0}
+.tl-date{font-family:var(--mono);font-size:11px;color:var(--purple);letter-spacing:0.1em;margin-bottom:4px}
+.tl-hash{font-family:var(--mono);font-size:11px;color:var(--t4)}
+.tl-text{font-size:14px;color:var(--t2);line-height:1.6}
+.tl-text strong{color:var(--t1)}
+.bench-table{width:100%;border-collapse:collapse;margin-top:16px;font-size:13px}
+.bench-table th{text-align:left;font-family:var(--mono);font-size:10px;color:var(--t4);letter-spacing:0.1em;text-transform:uppercase;padding:8px 12px;border-bottom:1px solid var(--border)}
+.bench-table td{padding:8px 12px;border-bottom:1px solid var(--border);color:var(--t2)}
+.bench-table tr:last-child td{border-bottom:none}
+.bench-score{font-family:var(--mono);font-weight:600;font-size:12px}
+.bench-score.pass{color:var(--green)}
+.bench-score.fail{color:var(--red)}
+.bench-score.warn{color:var(--amber)}
+.expand-block{margin:16px 0;border:1px solid var(--border);border-radius:12px;overflow:hidden}
+.expand-block summary{padding:14px 20px;cursor:pointer;font-size:14px;font-weight:600;color:var(--t1);background:var(--s2);list-style:none;display:flex;align-items:center;gap:10px;transition:background 0.2s}
+.expand-block summary:hover{background:var(--s3)}
+.expand-block summary::before{content:'\25B8';font-family:var(--mono);font-size:12px;color:var(--t4);transition:transform 0.2s}
+.expand-block[open] summary::before{transform:rotate(90deg)}
+.expand-block .expand-content{padding:16px 20px;font-size:14px;color:var(--t2);line-height:1.7;border-top:1px solid var(--border)}
+.expand-block .expand-content code{font-family:var(--mono);font-size:12px;background:var(--s3);padding:2px 6px;border-radius:4px;color:var(--cyan)}
+.stat-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:20px}
+.stat-card{background:var(--s2);border:1px solid var(--border);border-radius:12px;padding:20px;text-align:center}
+.stat-num{font-family:var(--mono);font-size:28px;font-weight:700;color:var(--t1);line-height:1}
+.stat-label{font-size:12px;color:var(--t3);margin-top:8px}
+.bench-bar-row{display:flex;align-items:center;gap:12px;margin-bottom:10px}
+.bench-bar-name{font-family:var(--mono);font-size:12px;color:var(--t2);min-width:120px;text-align:right}
+.bench-bar-track{flex:1;height:24px;background:var(--s3);border-radius:6px;overflow:hidden;display:flex;gap:2px;padding:2px}
+.bench-bar-seg{height:100%;border-radius:4px;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:10px;color:rgba(0,0,0,0.7);font-weight:600;transition:width 0.6s var(--ease)}
+.bench-bar-total{font-family:var(--mono);font-size:13px;font-weight:600;min-width:36px}
+.failure-card{background:var(--s2);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:12px}
+.failure-card h4{font-size:14px;font-weight:700;margin-bottom:8px;color:var(--t1)}
+.failure-card .failure-stat{font-family:var(--mono);font-size:12px;color:var(--amber);margin-bottom:8px}
+.failure-card p{font-size:13px;color:var(--t3);line-height:1.6}
+@media(max-width:600px){.stat-row{grid-template-columns:1fr 1fr}.bench-bar-name{min-width:80px;font-size:10px}}
+/* Ch5 blog overrides — simplified palette, better contrast */
+#ch4 .sect-tag{color:var(--purple);border-color:var(--purple)}
+#ch4 .bento-item{border-color:rgba(139,92,246,0.15)}
+#ch4 .bento-item p,#ch4 .failure-card p{color:var(--t2)}
+#ch4 .stat-label,#ch4 .bench-table th,#ch4 .card-label{color:var(--t2)}
+#ch4 .failure-stat{color:var(--t2);font-style:italic}
+#ch4 .stat-num{color:var(--t1)}
+#ch4 h3{color:var(--t1)}
+#ch4 .bento-icon{background:rgba(139,92,246,0.12)}
+#ch4 .tl-item::before{border-color:var(--purple);background:var(--bg)}
+#ch4 .tl-item.done::before{border-color:var(--purple);background:rgba(139,92,246,0.15)}
+#ch4 .tag{border-color:rgba(139,92,246,0.3);color:var(--purple);background:rgba(139,92,246,0.06)}
+#ch4 .bench-score{color:var(--t1)}
+#ch4 .bench-score.warn{color:var(--t2)}
+#ch4 .bench-bar-total{color:var(--t1)}
+.prompt-block{position:relative;font-family:var(--mono);font-size:12px;color:var(--t2);line-height:1.8;background:var(--s2);padding:16px 48px 16px 16px;border-radius:8px;border:1px solid var(--border);margin-top:16px;white-space:pre-wrap}
+.prompt-block strong{color:var(--t1)}
+.prompt-block .copy-btn{position:absolute;top:10px;right:10px;background:var(--s3);border:1px solid var(--border);border-radius:6px;color:var(--t3);font-family:var(--mono);font-size:11px;padding:4px 10px;cursor:pointer;transition:background 0.15s,color 0.15s,border-color 0.15s}
+.prompt-block .copy-btn:hover{background:var(--s4);color:var(--t1);border-color:var(--border-h)}
+.prompt-block .copy-btn.copied{background:rgba(139,92,246,0.15);color:var(--purple);border-color:var(--purple)}
+
+</style>
+</head>
+<body>
+
+<!-- Cursor glow -->
+<div class="cursor-glow" id="cursorGlow"></div>
+<!-- Scroll progress -->
+<div class="scroll-progress" id="scrollProgress"></div>
+<!-- Toast -->
+<div class="g-toast" id="gToast">
+  <div class="g-toast-icon"><svg viewBox="0 0 12 12"><polyline points="2,6 5,9 10,3"/></svg></div>
+  <span id="gToastTxt"></span>
+  <svg class="g-toast-timer" viewBox="0 0 20 20"><circle cx="10" cy="10" r="8"/><circle class="timer-fill" cx="10" cy="10" r="8"/></svg>
+</div>
+
+<!-- Sidebar -->
+<nav class="sidebar glass" id="sidebar">
+  <div class="sidebar-brand">TTRN</div>
+  <div class="sidebar-chapters" id="navChapters">
+    <div class="ch-dot active" onclick="goTo(0)" title="Chapter 1">1</div>
+    <div class="ch-dot" onclick="goTo(1)" title="Chapter 2">2</div>
+    <div class="ch-dot" onclick="goTo(2)" title="Chapter 3">3</div>
+    <div class="ch-dot" onclick="goTo(3)" title="Chapter 4">4</div>
+    <div class="ch-dot" onclick="goTo(4)" title="Chapter 5">5</div>
+  </div>
+  <div class="sidebar-divider"></div>
+  <div class="sidebar-sections" id="sidebarSections"></div>
+  <div class="sidebar-divider"></div>
+  <div class="sidebar-xp">
+    <span class="sidebar-xp-dot"></span>
+    <span id="gXpVal">0</span>
+  </div>
+</nav>
+
+<!-- ============================================================ CHAPTER 1 -->
+<div class="chapter active" id="ch0">
+
+<header class="hero" id="s0-hero">
+  <div class="hero-eyebrow">Chapter 01</div>
+  <h1 class="hero-title" data-text="Knowledge|Worth">Knowledge<br>Worth <em>Sharing</em></h1>
+  <p class="hero-desc">You're looking at a tutorial built by the very tool it's teaching you to use. Tutorialinator turns any knowledge source — a video, a topic, a URL — into an interactive HTML experience like this one.</p>
+  <div class="hero-chips">
+    <div class="hero-chip"><span class="hero-chip-icon purple"></span>~8 min</div>
+    <div class="hero-chip"><span class="hero-chip-icon cyan"></span>Any audience</div>
+    <div class="hero-chip"><span class="hero-chip-icon green"></span>3 challenges</div>
+  </div>
+  <div class="hero-meta">
+    <div class="hero-meta-line">Built from a 17-min screen recording · Video Mode · Two MCP servers · Local processing</div>
+  </div>
+</header>
+
+<div class="div"></div>
+
+<section class="sect" id="s0-problem">
+  <div class="sect-tag">The Problem</div>
+  <h2>The format <span class="accent">gap</span></h2>
+  <p class="body">You've built something worth knowing. Maybe it's a custom workflow, a tool you wrote, a process your team spent months perfecting. Now comes the part everyone dreads: <strong>sharing it in a way that actually transfers the knowledge</strong>.</p>
+  <p class="body mt16">Videos are passive — you watch, but you don't practice. Blog posts are static — you read, but nothing responds to you. What's missing is the middle ground: something you can interact with, make predictions in, get wrong, and try again.</p>
+  <p class="body mt16">That's what a Tutorialinator tutorial is. The one you're in right now was generated from a 17-minute screen recording using a single command.</p>
+
+  <a class="repo-link-card" href="https://github.com/masudl-hub/tutorialinator" target="_blank" rel="noopener">
+    <svg class="repo-link-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
+    <div class="repo-link-text">
+      <div class="repo-link-label">View on GitHub</div>
+      <div class="repo-link-desc">github.com/masudl-hub/tutorialinator</div>
+    </div>
+    <svg class="repo-link-arrow" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
+  </a>
+</section>
+
+<div class="div"></div>
+
+<section class="sect" id="s0-modes">
+  <div class="sect-tag cyan">Seven Ways In</div>
+  <h2>One tool, <span class="accent-c">seven inputs</span></h2>
+  <p class="body">Tutorialinator auto-detects what you give it and picks the right strategy. You don't choose a mode from a menu — you just describe what you have.</p>
+
+  <div class="bento bento-modes mt28">
+    <div class="bento-item">
+      <div class="bento-icon p">🎬</div>
+      <h3>Video Mode</h3>
+      <p>Drop in a <code>.mp4</code>, <code>.mov</code>, or even a YouTube URL. The tutorialinator MCP server extracts the transcript using local Whisper, analyzes frames using FFmpeg, and builds the tutorial from what you actually said and showed.</p>
+      <div class="tag-row mt16"><span class="tag p">.mp4 / .mov</span><span class="tag p">YouTube URLs</span></div>
+    </div>
+    <div class="bento-item">
+      <div class="bento-icon c">💬</div>
+      <h3>Topic Mode</h3>
+      <p>Describe what you want to teach. <code>/tutorialinator "teach me React hooks"</code>. Claude draws on its training knowledge to build a complete curriculum from scratch.</p>
+      <div class="tag-row mt16"><span class="tag c">Any topic string</span></div>
+    </div>
+    <div class="bento-item">
+      <div class="bento-icon g">🔗</div>
+      <h3>Research Mode</h3>
+      <p>Provide URLs. The skill fetches and synthesizes each source, preserving citations. Best when you have specific docs, articles, or repos you want to teach from.</p>
+      <div class="tag-row mt16"><span class="tag g">URLs in prompt</span></div>
+    </div>
+    <div class="bento-item">
+      <div class="bento-icon a">🔭</div>
+      <h3>Deep Research</h3>
+      <p>No sources? No problem. Include "research" or "deep dive" in your prompt and the skill searches the web, filters 5–15 quality sources, and synthesizes them before generating.</p>
+      <div class="tag-row mt16"><span class="tag a">"research" keyword</span><span class="tag a">"deep dive" keyword</span></div>
+    </div>
+  </div>
+
+  <div class="bento bento-modes mt16" style="grid-template-columns:1fr 1fr 1fr">
+    <div class="bento-item">
+      <div class="bento-icon p">🎧</div>
+      <h3>Audio Mode</h3>
+      <p>Podcast episodes, voice memos, recorded meetings — any audio file. Whisper transcribes it, then the skill structures the content into an interactive tutorial.</p>
+    </div>
+    <div class="bento-item">
+      <div class="bento-icon c">📂</div>
+      <h3>Codebase Mode</h3>
+      <p>Point it at a repository or directory. The skill analyzes the code structure and generates a tutorial that teaches the architecture, patterns, and key decisions.</p>
+    </div>
+    <div class="bento-item">
+      <div class="bento-icon g">📊</div>
+      <h3>Slide Deck Mode</h3>
+      <p>Drop in a <code>.pptx</code> or PDF. The skill extracts slide content — titles, body text, speaker notes — and transforms the presentation into an interactive learning experience.</p>
+    </div>
+  </div>
+
+  <a class="repo-link-card" href="https://github.com/masudl-hub/tutorialinator#architecture" target="_blank" rel="noopener">
+    <svg class="repo-link-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
+    <div class="repo-link-text">
+      <div class="repo-link-label">View the architecture diagram</div>
+      <div class="repo-link-desc">github.com/masudl-hub/tutorialinator — README</div>
+    </div>
+    <svg class="repo-link-arrow" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
+  </a>
+</section>
+
+<div class="div"></div>
+
+<section class="sect" id="s0-output">
+  <div class="sect-tag green">The Output</div>
+  <h2>One file. <span class="accent-g">No server.</span></h2>
+  <p class="body">Every tutorial is a <strong>single self-contained HTML file</strong>. One <code>&lt;style&gt;</code> block. One <code>&lt;script&gt;</code> block. Zero external dependencies beyond a Google Fonts link. Open it in a browser. That's it.</p>
+  <p class="body mt16">No <code>npm install</code>. No dev server. No hosting setup. You can email it, put it on a shared drive, host it on a static CDN, or just open it locally. The portability is deliberate — sharing the file is sharing the knowledge.</p>
+  <p class="body mt16">Everything computation-heavy runs on your machine. Whisper transcribes locally, FFmpeg processes frames locally, Playwright validates locally. The only external call is to Claude's API. Your data stays on your device.</p>
+
+  <div class="card mt28">
+    <div class="card-label">Install — one command</div>
+    <div class="terminal">
+      <div class="terminal-bar">
+        <div class="term-dot r"></div><div class="term-dot y"></div><div class="term-dot g"></div>
+        <span class="terminal-title">bash</span>
+      </div>
+      <div class="terminal-body">
+        <span class="term-line"><span class="term-comment"># Install the skill from GitHub</span></span>
+        <span class="term-line"><span class="term-prompt">$ </span><span class="term-cmd">curl -fsSL https://raw.githubusercontent.com/masudl-hub/tutorialinator/main/install.sh | bash</span></span>
+        <span class="term-line"><span class="term-output">&nbsp;</span></span>
+        <span class="term-line"><span class="term-comment"># Restart Claude Code, then run:</span></span>
+        <span class="term-line"><span class="term-prompt">$ </span><span class="term-cmd">/tutorialinator ~/my-video.mp4</span></span>
+        <span class="term-line"><span class="term-output">&nbsp;</span></span>
+        <span class="term-line"><span class="term-comment"># Output lands at:</span></span>
+        <span class="term-line"><span class="term-highlight">~/my-video-tutorial/src/tutorial.html</span></span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="div"></div>
+
+<section class="sect" id="s0-challenge">
+  <div class="sect-tag amber">Challenge 1 of 3</div>
+  <h2>Mode <span class="accent-a">Decider</span></h2>
+  <p class="body">Before you can use a tool well, you need to know when to reach for each setting. Three real scenarios. One right answer each. Commit before you reveal.</p>
+
+  <div class="card mt28">
+    <div class="card-label">Challenge — Pick the right mode</div>
+    <div class="mode-challenge" id="modeChallenge">
+      <div class="mc-progress">
+        <div class="mc-pip active" id="mcPip0"></div>
+        <div class="mc-pip" id="mcPip1"></div>
+        <div class="mc-pip" id="mcPip2"></div>
+      </div>
+      <div class="mc-scenario">
+        <div class="mc-scenario-label">Scenario <span id="mcScenarioNum">1</span> of 3</div>
+        <div class="mc-scenario-txt" id="mcScenarioTxt">Loading...</div>
+      </div>
+      <div class="mc-options" id="mcOptions"></div>
+      <div class="mc-feedback" id="mcFeedback"></div>
+      <button class="mc-next" id="mcNext" onclick="mcAdvance()">Next scenario <span>→</span></button>
+    </div>
+  </div>
+</section>
+
+<div class="div"></div>
+
+<section class="sect" id="s0-quiz">
+  <div class="sect-tag">Quiz</div>
+  <h2>Apply your <span class="accent">instincts</span></h2>
+  <p class="body">A quiz that requires judgment, not scanning. Read the scenario carefully — the answer isn't in this page's text.</p>
+
+  <div class="card mt28">
+    <div id="quiz0"></div>
+  </div>
+</section>
+
+<section class="sect ch-end" id="s0-end">
+  <h2>Chapter 1 complete</h2>
+  <p class="body">You know the why and the what. Now let's open the hood — how does Tutorialinator actually turn a video file into a working tutorial?</p>
+  <button class="btn-next" onclick="goTo(1)">Under the Hood <svg viewBox="0 0 16 16" fill="currentColor"><path d="M3 8h10M9 4l4 4-4 4"/></svg></button>
+  <div class="ch-end-sub">Chapter 02 — The Machine Behind the Magic</div>
+</section>
+
+</div><!-- /ch0 -->
+
+<!-- ============================================================ CHAPTER 2 -->
+<div class="chapter" id="ch1">
+
+<header class="hero" id="s1-hero">
+  <div class="hero-eyebrow">Chapter 02</div>
+  <h1 class="hero-title" data-text="The Machine|Behind">The Machine<br>Behind <em>the Magic</em></h1>
+  <p class="hero-desc">What actually happens when you type /tutorialinator? Multiple coordinated agents, two MCP servers, three local tools, and a self-healing pipeline — all firing before the browser opens.</p>
+  <div class="hero-chips">
+    <div class="hero-chip"><span class="hero-chip-icon cyan"></span>~7 min</div>
+    <div class="hero-chip"><span class="hero-chip-icon purple"></span>Technical depth</div>
+    <div class="hero-chip"><span class="hero-chip-icon green"></span>3 challenges</div>
+  </div>
+</header>
+
+<div class="div"></div>
+
+<section class="sect" id="s1-local">
+  <div class="sect-tag cyan">Architecture</div>
+  <h2>Local first, <span class="accent-c">always</span></h2>
+  <p class="body">Every computation-heavy step runs on your machine. Whisper is a neural network that runs locally — your video audio never leaves your computer. FFmpeg processes frames locally. The only external call is to Claude Code (which handles its own privacy guarantees).</p>
+  <p class="body mt16">This was a deliberate design choice. A tool that processes your screen recordings, code, and internal processes needs to earn trust. As Masud described in the video: <strong>"trust was a big deal to me — I wanted to ensure that as I was building this it was as local as possible."</strong></p>
+
+  <div class="bento bento-modes mt28" style="grid-template-columns:1fr 1fr 1fr">
+    <div class="bento-item">
+      <div class="bento-icon c">🎙</div>
+      <h3>Whisper</h3>
+      <p>OpenAI's local speech-to-text model. Runs entirely on your machine. Transcribes audio with word-level timestamps. The "base" model is ~140 MB; "large" is ~1.5 GB.</p>
+    </div>
+    <div class="bento-item">
+      <div class="bento-icon p">🎞</div>
+      <h3>FFmpeg</h3>
+      <p>Extracts frames from video at scene boundaries. Each frame is analyzed visually by Claude to detect code, UI states, and key moments. Auto-installed via Homebrew on macOS.</p>
+    </div>
+    <div class="bento-item">
+      <div class="bento-icon g">🌐</div>
+      <h3>Chromium</h3>
+      <p>Playwright's browser, used only during E2E validation after the tutorial is generated. Catches console errors, broken widgets, and rendering failures — things visual inspection misses.</p>
+    </div>
+  </div>
+</section>
+
+<div class="div"></div>
+
+<section class="sect" id="s1-mcps">
+  <div class="sect-tag">Two MCPs</div>
+  <h2>The two <span class="accent">control planes</span></h2>
+  <p class="body">An MCP (Model Context Protocol) server is a local process that gives Claude new tools it can call. Tutorialinator installs two. They are <strong>not interchangeable</strong> — each has a distinct role in the pipeline.</p>
+
+  <div class="bento bento-modes mt28" style="grid-template-columns:1fr 1fr">
+    <div class="bento-item" style="border-color:rgba(139,92,246,0.3)">
+      <div class="bento-icon p">🎬</div>
+      <h3 style="color:var(--purple)">tutorialinator MCP</h3>
+      <p>Python FastMCP server (879 lines). Provides 8 tools: <code>download_video</code>, <code>transcribe_with_timestamps</code>, <code>detect_scenes</code>, <code>extract_key_frames</code>, <code>detect_code_in_frames</code>, <code>generate_chapters</code>, <code>extract_slides</code>, <code>get_video_metadata</code>. Used across Video, Audio, and Slide Deck modes.</p>
+      <div class="tag-row mt16"><span class="tag p">Video analysis</span><span class="tag p">Whisper</span><span class="tag p">FFmpeg</span></div>
+    </div>
+    <div class="bento-item" style="border-color:rgba(0,212,255,0.3)">
+      <div class="bento-icon c">🎭</div>
+      <h3 style="color:var(--cyan)">playwright MCP</h3>
+      <p>Browser automation server. Runs after HTML generation. Loads the tutorial in Chromium, checks console errors, tests chapter navigation, clicks quiz options, runs sandboxes, verifies XP increments.</p>
+      <div class="tag-row mt16"><span class="tag c">E2E validation</span><span class="tag c">Chromium</span><span class="tag c">All modes</span></div>
+    </div>
+  </div>
+
+  <a class="repo-link-card" href="https://github.com/masudl-hub/tutorialinator#architecture" target="_blank" rel="noopener">
+    <svg class="repo-link-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
+    <div class="repo-link-text">
+      <div class="repo-link-label">View the architecture diagram</div>
+      <div class="repo-link-desc">github.com/masudl-hub/tutorialinator — README</div>
+    </div>
+    <svg class="repo-link-arrow" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
+  </a>
+</section>
+
+<div class="div"></div>
+
+<section class="sect" id="s1-pipeline">
+  <div class="sect-tag purple">The Pipeline</div>
+  <h2>Seven steps, <span class="accent">one file</span></h2>
+  <p class="body">From your first keypress to the browser opening, seven distinct phases fire in sequence. Click each step to see what's happening and which tools are involved.</p>
+
+  <div class="card mt28">
+    <div class="card-label">Interactive Pipeline — click a step to expand</div>
+    <div class="pipeline-stepper">
+      <div class="pipe-track" id="pipeTrack">
+        <div class="pipe-step" onclick="pipeSelect(0)">
+          <div class="pipe-step-left"><div class="pipe-dot" id="pd0">1</div><div class="pipe-line"></div></div>
+          <div class="pipe-content"><div class="pipe-title">Auto-Setup &amp; Mode Detection</div><div class="pipe-detail">auto-setup.sh runs first — a self-healing script that verifies your Python venv, MCP config, and Playwright. If anything is broken, it fixes it automatically before continuing. You should never see a setup error. Then the skill reads your input: video file path? URL? Topic string? This determines which branch of the pipeline fires.</div><span class="pipe-tag" style="background:rgba(139,92,246,0.1);color:var(--purple)">auto-setup.sh · SKILL.md mode detection</span></div>
+        </div>
+        <div class="pipe-step" onclick="pipeSelect(1)">
+          <div class="pipe-step-left"><div class="pipe-dot" id="pd1">2</div><div class="pipe-line"></div></div>
+          <div class="pipe-content"><div class="pipe-title">Source Analysis (Video Mode)</div><div class="pipe-detail">The tutorialinator MCP fires: transcribe_with_timestamps extracts the full transcript via Whisper. detect_scenes finds chapter boundaries via FFmpeg. extract_key_frames grabs visual moments. detect_code_in_frames reads any code shown on screen.</div><span class="pipe-tag" style="background:rgba(0,212,255,0.1);color:var(--cyan)">tutorialinator MCP · Whisper · FFmpeg</span></div>
+        </div>
+        <div class="pipe-step" onclick="pipeSelect(2)">
+          <div class="pipe-step-left"><div class="pipe-dot" id="pd2">3</div><div class="pipe-line"></div></div>
+          <div class="pipe-content"><div class="pipe-title">Learning Design Phase</div><div class="pipe-detail">For every chapter, Claude defines: a measurable learning objective (Bloom's taxonomy L3+ — application, not recall), 1–3 common misconceptions, the key challenge widget, prerequisite concepts, and a widget plan. This is the pedagogical backbone. No HTML is written yet.</div><span class="pipe-tag" style="background:rgba(34,197,94,0.1);color:var(--green)">Claude reasoning · SKILL.md spec</span></div>
+        </div>
+        <div class="pipe-step" onclick="pipeSelect(3)">
+          <div class="pipe-step-left"><div class="pipe-dot" id="pd3">4</div><div class="pipe-line"></div></div>
+          <div class="pipe-content"><div class="pipe-title">Pedagogical Review (sub-agent)</div><div class="pipe-detail">A separate agent reviews the chapter plan against 6 criteria: recall-only quizzes, missing exercises, passive widgets, scaffolding gaps, untested misconceptions, vague objectives. It returns a priority list of fixes. The skill integrates the feedback before writing HTML.</div><span class="pipe-tag" style="background:rgba(245,158,11,0.1);color:var(--amber)">Agent team · Review criteria</span></div>
+        </div>
+        <div class="pipe-step" onclick="pipeSelect(4)">
+          <div class="pipe-step-left"><div class="pipe-dot" id="pd4">5</div><div class="pipe-line"></div></div>
+          <div class="pipe-content"><div class="pipe-title">Phased HTML Generation</div><div class="pipe-detail">The tutorial is written in phases — a locked design system (25+ CSS variables, 8 required keyframes) first, then chapter by chapter. Why phases? The final HTML is 1,500–2,500+ lines, which exceeds Claude's output token limit if attempted in one pass. The locked CSS means the LLM doesn't decide fonts, colors, or spacing — it copies them verbatim, spending its cognitive budget on pedagogy instead. The skill plans its phases, reads back what it wrote, and validates before continuing.</div><span class="pipe-tag" style="background:rgba(139,92,246,0.1);color:var(--purple)">Claude writes · Reads back · Validates</span></div>
+        </div>
+        <div class="pipe-step" onclick="pipeSelect(5)">
+          <div class="pipe-step-left"><div class="pipe-dot" id="pd5">6</div><div class="pipe-line"></div></div>
+          <div class="pipe-content"><div class="pipe-title">HTML Structure Validation</div><div class="pipe-detail">Before Playwright runs, a Node.js script checks the HTML structure: are all chapters properly nested? Are there orphaned sections? Are chapter tags balanced? This catches nesting bugs that produce zero console errors but silently break navigation.</div><span class="pipe-tag" style="background:rgba(0,212,255,0.1);color:var(--cyan)">Node.js · Structure check</span></div>
+        </div>
+        <div class="pipe-step" onclick="pipeSelect(6)">
+          <div class="pipe-step-left"><div class="pipe-dot" id="pd6">7</div><div class="pipe-line"></div></div>
+          <div class="pipe-content"><div class="pipe-title">Playwright E2E Validation → Open</div><div class="pipe-detail">The playwright MCP loads the tutorial in Chromium. It checks console errors, navigates chapters, clicks quizzes, runs sandboxes, tests keyboard shortcuts, checks XP. If anything fails: fix and re-run from step 1. When all passes: the file opens in your default browser automatically.</div><span class="pipe-tag" style="background:rgba(34,197,94,0.1);color:var(--green)">playwright MCP · Chromium · auto-open</span></div>
+        </div>
+      </div>
+      <div class="pipe-btns">
+        <button class="pipe-btn primary" onclick="pipeNext()">Next step →</button>
+        <button class="pipe-btn" onclick="pipeReset()">Reset</button>
+      </div>
+    </div>
+  </div>
+
+  <a class="repo-link-card" href="https://github.com/masudl-hub/tutorialinator#workflow-by-mode" target="_blank" rel="noopener">
+    <svg class="repo-link-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
+    <div class="repo-link-text">
+      <div class="repo-link-label">View the generation flowchart</div>
+      <div class="repo-link-desc">github.com/masudl-hub/tutorialinator — SKILL.md</div>
+    </div>
+    <svg class="repo-link-arrow" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
+  </a>
+</section>
+
+<div class="div"></div>
+
+<section class="sect" id="s1-diag">
+  <div class="sect-tag amber">Challenge 1 of 3</div>
+  <h2>MCP <span class="accent-a">Diagnostic</span></h2>
+  <p class="body">The two MCPs have completely different jobs. Confusing them is the most common architectural mistake newcomers make. Two symptoms. You pick which MCP to investigate for each — then see why.</p>
+
+  <div class="card mt28">
+    <div class="card-label">Challenge — Which MCP do you check?</div>
+    <div id="diagSection0">
+      <div class="mcp-symptom">
+        <div class="mcp-symptom-label">Symptom 1</div>
+        <div class="mcp-symptom-txt">You run Video Mode on a 15-minute recording. The pipeline completes, but the generated tutorial has <strong>generic chapter titles</strong> like "Chapter 1" with no content from your actual video — as if the transcript was empty.</div>
+      </div>
+      <div class="mcp-diag" id="diagOpts0">
+        <div class="mcp-card" id="diagA0" onclick="diagCheck(0,'a')">
+          <h4>🎬 tutorialinator MCP</h4>
+          <p>Handles video analysis — Whisper transcription, scene detection, frame extraction. Problems here produce empty or wrong source content.</p>
+        </div>
+        <div class="mcp-card" id="diagB0" onclick="diagCheck(0,'b')">
+          <h4>🎭 playwright MCP</h4>
+          <p>Handles browser-based E2E validation after the tutorial is built. Problems here produce rendering or interaction failures in the final output.</p>
+        </div>
+      </div>
+      <div class="mcp-feedback" id="diagFb0"></div>
+    </div>
+    <div style="height:16px"></div>
+    <div id="diagSection1" style="opacity:0.3;pointer-events:none;transition:opacity 0.4s">
+      <div class="mcp-symptom">
+        <div class="mcp-symptom-label">Symptom 2</div>
+        <div class="mcp-symptom-txt">The tutorial generates successfully. It looks great visually. But when Claude reports the E2E results, it logs: <strong>"TypeError: Cannot read properties of null (reading 'textContent')"</strong> and the quiz doesn't respond to clicks.</div>
+      </div>
+      <div class="mcp-diag" id="diagOpts1">
+        <div class="mcp-card" id="diagA1" onclick="diagCheck(1,'a')">
+          <h4>🎬 tutorialinator MCP</h4>
+          <p>Handles video analysis — Whisper transcription, scene detection, frame extraction. Problems here produce empty or wrong source content.</p>
+        </div>
+        <div class="mcp-card" id="diagB1" onclick="diagCheck(1,'b')">
+          <h4>🎭 playwright MCP</h4>
+          <p>Handles browser-based E2E validation after the tutorial is built. Problems here produce rendering or interaction failures in the final output.</p>
+        </div>
+      </div>
+      <div class="mcp-feedback" id="diagFb1"></div>
+    </div>
+  </div>
+</section>
+
+<div class="div"></div>
+
+<section class="sect" id="s1-parsons">
+  <div class="sect-tag">Challenge 2 of 3</div>
+  <h2>Pipeline <span class="accent">Reorder</span></h2>
+  <p class="body">The seven steps only work in the right sequence. Drag them into the correct order. Each step depends on the one before it — the order isn't arbitrary.</p>
+
+  <div class="card mt28">
+    <div class="card-label">Parsons Problem — drag to reorder</div>
+    <div class="parsons">
+      <div class="parsons-label">Drop into correct order ↓</div>
+      <div id="parsonsTarget" class="parsons-target" style="min-height:200px"></div>
+      <div style="height:16px"></div>
+      <div class="parsons-label">Shuffled steps</div>
+      <div id="parsonsBank" class="parsons-bank"></div>
+      <button class="parsons-check" onclick="checkParsons()">Check order</button>
+      <div class="parsons-result" id="parsonsResult"></div>
+    </div>
+  </div>
+</section>
+
+<div class="div"></div>
+
+<section class="sect" id="s1-quiz">
+  <div class="sect-tag">Quiz</div>
+  <h2>Reason through <span class="accent">failure</span></h2>
+  <p class="body">This quiz tests whether you can reason about the pipeline, not just recall its steps. Read the scenario carefully.</p>
+
+  <div class="card mt28">
+    <div id="quiz1"></div>
+  </div>
+</section>
+
+<section class="sect ch-end" id="s1-end">
+  <h2>Chapter 2 complete</h2>
+  <p class="body">You know how the machine works. Now let's use it — from installing the skill to writing invocations that produce exactly the tutorial you want.</p>
+  <button class="btn-next" onclick="goTo(2)">Your First Tutorial <svg viewBox="0 0 16 16" fill="currentColor"><path d="M3 8h10M9 4l4 4-4 4"/></svg></button>
+  <div class="ch-end-sub">Chapter 03 — One Command Away</div>
+</section>
+
+</div><!-- /ch1 -->
+
+<!-- ============================================================ CHAPTER 3 -->
+<div class="chapter" id="ch2">
+
+<header class="hero" id="s2-hero">
+  <div class="hero-eyebrow">Chapter 03</div>
+  <h1 class="hero-title" data-text="One Command|Away">One Command<br><em>Away</em></h1>
+  <p class="hero-desc">Install once, invoke anywhere. This chapter takes you from a bare machine to your first generated tutorial — and teaches you what to add to your prompt to get exactly what you need.</p>
+  <div class="hero-chips">
+    <div class="hero-chip"><span class="hero-chip-icon green"></span>~6 min</div>
+    <div class="hero-chip"><span class="hero-chip-icon amber"></span>Hands-on</div>
+    <div class="hero-chip"><span class="hero-chip-icon purple"></span>3 challenges</div>
+  </div>
+</header>
+
+<div class="div"></div>
+
+<section class="sect" id="s2-install">
+  <div class="sect-tag green">Install</div>
+  <h2>One curl, <span class="accent-g">then restart</span></h2>
+  <p class="body">The installer is a self-healing bash script. If something goes wrong — a broken Python venv, a missing MCP config, a missing Playwright install — it fixes the problem automatically and keeps going. You should never see a setup error. The script also runs before every tutorial generation, not just on first install. You only need <strong>Claude Code</strong>, <strong>Python 3.10+</strong>, <strong>Node.js</strong>, and <strong>FFmpeg</strong> pre-installed.</p>
+  <p class="body mt16">After the installer finishes, you must <strong>restart Claude Code</strong> so the MCP servers can register. Then you're ready.</p>
+
+  <div class="card mt28">
+    <div class="card-label">The install command</div>
+    <div class="terminal">
+      <div class="terminal-bar">
+        <div class="term-dot r"></div><div class="term-dot y"></div><div class="term-dot g"></div>
+        <span class="terminal-title">bash — install</span>
+      </div>
+      <div class="terminal-body">
+        <span class="term-line"><span class="term-prompt">$ </span><span class="term-cmd">curl -fsSL https://raw.githubusercontent.com/masudl-hub/tutorialinator/main/install.sh | bash</span></span>
+        <span class="term-line"><span class="term-output">&nbsp;</span></span>
+        <span class="term-line"><span class="term-output">✓ Cloning tutorialinator to ~/.claude/skills/tutorialinator/</span></span>
+        <span class="term-line"><span class="term-output">✓ Creating Python venv at mcp-server/venv/</span></span>
+        <span class="term-line"><span class="term-output">✓ Installing: openai-whisper mcp fastmcp yt-dlp ffmpeg-python...</span></span>
+        <span class="term-line"><span class="term-output">✓ Downloading Whisper base model (~140 MB)</span></span>
+        <span class="term-line"><span class="term-output">✓ Installing Playwright + Chromium browser</span></span>
+        <span class="term-line"><span class="term-output">✓ Registering MCP servers in Claude Code settings</span></span>
+        <span class="term-line"><span class="term-output">&nbsp;</span></span>
+        <span class="term-line"><span class="term-highlight">→ Restart Claude Code to complete setup</span></span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="div"></div>
+
+<section class="sect" id="s2-curl">
+  <div class="sect-tag amber">Challenge 1 of 3</div>
+  <h2>Read the <span class="accent-a">command</span></h2>
+  <p class="body">Before you run a script piped from the internet, you should know exactly what each flag does. Click each segment of the command to see what it means. Complete all five to earn XP.</p>
+
+  <div class="card mt28">
+    <div class="card-label">Challenge — Annotate the curl command</div>
+    <div class="curl-annotate">
+      <div class="curl-display">
+        <span class="term-prompt">$ </span>
+        <span class="curl-seg" id="cs-curl" onclick="curlClick('curl')">curl</span>
+        <span style="color:#64748b"> </span>
+        <span class="curl-seg" id="cs-f" onclick="curlClick('f')">-f</span><span class="curl-seg" id="cs-s" onclick="curlClick('s')">s</span><span class="curl-seg" id="cs-S" onclick="curlClick('S')">S</span><span class="curl-seg" id="cs-L" onclick="curlClick('L')">L</span>
+        <span style="color:#64748b"> </span>
+        <span class="curl-seg" id="cs-url" onclick="curlClick('url')" style="color:var(--cyan)">https://raw.githubusercontent.com/.../install.sh</span>
+        <span style="color:#64748b"> | bash</span>
+      </div>
+      <div class="curl-explain" id="curlExplain"></div>
+      <div class="curl-grid mt16">
+        <div class="curl-chip" id="cc-curl" onclick="curlClick('curl')">
+          <span class="curl-chip-label">curl</span>
+          <span class="curl-chip-name">command</span>
+        </div>
+        <div class="curl-chip" id="cc-f" onclick="curlClick('f')">
+          <span class="curl-chip-label">-f</span>
+          <span class="curl-chip-name">what does this do?</span>
+        </div>
+        <div class="curl-chip" id="cc-s" onclick="curlClick('s')">
+          <span class="curl-chip-label">-s</span>
+          <span class="curl-chip-name">what does this do?</span>
+        </div>
+        <div class="curl-chip" id="cc-S" onclick="curlClick('S')">
+          <span class="curl-chip-label">-S</span>
+          <span class="curl-chip-name">what does this do?</span>
+        </div>
+        <div class="curl-chip" id="cc-L" onclick="curlClick('L')">
+          <span class="curl-chip-label">-L</span>
+          <span class="curl-chip-name">what does this do?</span>
+        </div>
+        <div class="curl-chip" id="cc-url" onclick="curlClick('url')">
+          <span class="curl-chip-label">URL</span>
+          <span class="curl-chip-name">what is this?</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="div"></div>
+
+<section class="sect" id="s2-invoke">
+  <div class="sect-tag">Invocation</div>
+  <h2>The anatomy of a <span class="accent">great prompt</span></h2>
+  <p class="body">The skill command is <code>/tutorialinator</code>. Everything after it is your prompt. The mode is inferred automatically, but everything else — audience, context, what to include, what to skip — comes from what you write.</p>
+  <p class="body mt16">The difference between a generic tutorial and a precisely targeted one is almost entirely in the prompt. The skill supports seven input modes — the four shown below are the most common, plus Audio, Codebase, and Slide Deck for specialized inputs. Here's the anatomy:</p>
+
+  <div class="card mt28">
+    <div class="card-label">Four modes — click a tab to see example invocations</div>
+    <div class="terminal">
+      <div class="term-tabs">
+        <div class="term-tab active" onclick="termTab(0)">Video</div>
+        <div class="term-tab" onclick="termTab(1)">Topic</div>
+        <div class="term-tab" onclick="termTab(2)">Research</div>
+        <div class="term-tab" onclick="termTab(3)">Deep Research</div>
+      </div>
+      <div class="terminal-body" id="termBody">
+        <!-- Content set by JS -->
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="div"></div>
+
+<section class="sect" id="s2-fix">
+  <div class="sect-tag">Challenge 2 of 3</div>
+  <h2>Fix the <span class="accent">Invocation</span></h2>
+  <p class="body">Three problems are hiding in this invocation. They're the kind of mistakes that produce a tutorial that technically generates but teaches the wrong audience, misses the video content, or outputs to the wrong mental model. Find all three.</p>
+
+  <div class="card mt28">
+    <div class="card-label">Challenge — spot and fix the 3 issues</div>
+    <div class="fix-inv">
+      <div class="inv-display">
+        <div class="inv-line">
+          <span style="color:#28c840">/tutorialinator </span>
+          <span class="inv-segment broken" id="fix0" onclick="fixToggle(0)">~/Desktop/demo recording final v3.mov</span>
+          <span style="color:#64748b"> </span>
+        </div>
+        <div class="inv-line" style="margin-top:4px">
+          <span style="color:#64748b">Build a tutorial </span>
+          <span class="inv-segment broken" id="fix1" onclick="fixToggle(1)">for engineers</span>
+          <span style="color:#64748b"> about our deploy process. </span>
+        </div>
+        <div class="inv-line" style="margin-top:4px">
+          <span style="color:#64748b">Focus on the </span>
+          <span class="inv-segment broken" id="fix2" onclick="fixToggle(2)">technical steps only</span>
+          <span style="color:#64748b">. Don't include the video.</span>
+        </div>
+      </div>
+      <div class="inv-issues mt16" id="fixIssues">
+        <div class="inv-issue"><div class="inv-issue-num">1</div><div class="inv-issue-text" id="fi0"><span style="color:var(--t4)">Click a highlighted segment above to investigate...</span></div></div>
+        <div class="inv-issue"><div class="inv-issue-num">2</div><div class="inv-issue-text" id="fi1"><span style="color:var(--t4)">...</span></div></div>
+        <div class="inv-issue"><div class="inv-issue-num">3</div><div class="inv-issue-text" id="fi2"><span style="color:var(--t4)">...</span></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="div"></div>
+
+<section class="sect" id="s2-sandbox">
+  <div class="sect-tag green">Sandbox</div>
+  <h2>Build your <span class="accent-g">invocation</span></h2>
+  <p class="body">Use the sandbox below to draft your own <code>/tutorialinator</code> prompt. Try different audiences, add context, specify what you want included. The preview on the right shows what you'd type in Claude Code.</p>
+
+  <div class="card mt28">
+    <div class="sb-bar">
+      <div class="sb-file"><span class="sb-dot live"></span>invocation-builder.txt</div>
+      <div class="sb-btns">
+        <button class="sb-btn-ghost" onclick="resetSB(0)">Reset</button>
+        <button class="sb-btn-run" onclick="runSB(0)"><svg viewBox="0 0 10 10"><polygon points="2,1 9,5 2,9"/></svg>Preview</button>
+      </div>
+    </div>
+    <div class="sb-panels">
+      <div class="sb-editor">
+        <div class="sb-label">Your context / notes</div>
+        <div class="sb-code-wrap">
+          <div class="sb-gutter" id="sbGutter0"></div>
+          <textarea id="sbCode0" spellcheck="false" oninput="updGutter(0)" placeholder="Describe your knowledge source, audience, and what you want included..."></textarea>
+        </div>
+      </div>
+      <div class="sb-output">
+        <div class="sb-label">Preview invocation</div>
+        <iframe id="sbOut0" sandbox="allow-scripts"></iframe>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="div"></div>
+
+<section class="sect" id="s2-quiz">
+  <div class="sect-tag">Quiz</div>
+  <h2>Apply your <span class="accent">audience instinct</span></h2>
+  <p class="body">Audience specification is the single most impactful addition to any invocation. The skill's pedagogical review requires Bloom's taxonomy Level 3+ for all quiz questions — application, not recall. This quiz follows the same principle: you need to apply what you've learned, not scan for the answer above.</p>
+
+  <div class="card mt28">
+    <div id="quiz2"></div>
+  </div>
+</section>
+
+<section class="sect ch-end" id="s2-end">
+  <h2>Chapter 3 complete</h2>
+  <p class="body">You can install, invoke, and troubleshoot. Now let's go from "it works" to "it's exactly what I needed" — the craft of prompting Tutorialinator for maximum impact.</p>
+  <button class="btn-next" onclick="goTo(3)">Prompt Mastery <svg viewBox="0 0 16 16" fill="currentColor"><path d="M3 8h10M9 4l4 4-4 4"/></svg></button>
+  <div class="ch-end-sub">Chapter 04 — Getting the Most Out of It</div>
+</section>
+
+</div><!-- /ch2 -->
+
+<!-- ============================================================ CHAPTER 4 -->
+<div class="chapter" id="ch3">
+
+<header class="hero" id="s3-hero">
+  <div class="hero-eyebrow">Chapter 04</div>
+  <h1 class="hero-title" data-text="Getting the|Most">Getting the<br>Most <em>Out of It</em></h1>
+  <p class="hero-desc">The skill does the heavy lifting. Your job is to give it the right briefing. This chapter is about the craft of prompting — what to say, what to add, and when to iterate.</p>
+  <div class="hero-chips">
+    <div class="hero-chip"><span class="hero-chip-icon purple"></span>~7 min</div>
+    <div class="hero-chip"><span class="hero-chip-icon amber"></span>Prompt craft</div>
+    <div class="hero-chip"><span class="hero-chip-icon green"></span>3 challenges</div>
+  </div>
+</header>
+
+<div class="div"></div>
+
+<section class="sect" id="s3-audience">
+  <div class="sect-tag purple">Audience</div>
+  <h2>Who's <span class="accent">learning this?</span></h2>
+  <p class="body">Tutorialinator's most transformative prompt addition is <strong>audience specification</strong>. Without it, the skill defaults to a reasonable middle ground. With it, the skill layers content — beginner-friendly framing for newcomers, technical depth for experts, in the same tutorial.</p>
+  <p class="body mt16">As Masud described: <em>"I wanted the skill to understand the audience because it needs to understand how to position this so that it's actually acceptable."</em> The skill may even ask you for audience context if you don't provide it.</p>
+
+  <div class="bento bento-modes mt28" style="grid-template-columns:1fr 1fr">
+    <div class="bento-item" style="border-color:rgba(239,68,68,0.2)">
+      <div style="font-family:var(--mono);font-size:10px;color:var(--red);letter-spacing:0.1em;margin-bottom:12px">WITHOUT AUDIENCE</div>
+      <div style="font-family:var(--mono);font-size:12px;color:var(--t3);line-height:1.8">/tutorialinator ~/k8s-setup.mp4<br><br>Build a tutorial about our<br>Kubernetes cluster setup.</div>
+      <div class="tag-row mt16"><span class="tag" style="border-color:rgba(239,68,68,0.3);color:var(--red)">Generic depth</span><span class="tag" style="border-color:rgba(239,68,68,0.3);color:var(--red)">Default tone</span></div>
+    </div>
+    <div class="bento-item" style="border-color:rgba(34,197,94,0.2)">
+      <div style="font-family:var(--mono);font-size:10px;color:var(--green);letter-spacing:0.1em;margin-bottom:12px">WITH AUDIENCE</div>
+      <div style="font-family:var(--mono);font-size:12px;color:var(--t3);line-height:1.8">/tutorialinator ~/k8s-setup.mp4<br><br>Audience: junior devs who know<br>Docker but not Kubernetes, plus<br>senior SREs who need the edge<br>cases. Layer content for both.</div>
+      <div class="tag-row mt16"><span class="tag g">Layered depth</span><span class="tag g">Targeted tone</span></div>
+    </div>
+  </div>
+</section>
+
+<div class="div"></div>
+
+<section class="sect" id="s3-context">
+  <div class="sect-tag cyan">Context</div>
+  <h2>What you tell it <span class="accent-c">changes everything</span></h2>
+  <p class="body">Context isn't just background — it's instruction. The skill uses everything you provide to decide which widgets to build, what to quiz on, what to assume, and what to explain. Without good context, the three most common output failures emerge: code sandboxes get omitted (the agent skips them when the topic isn't obviously "code"), quiz questions test recall instead of understanding, and keyframes get dropped. These are the highest-value additions to any invocation.</p>
+
+  <div class="bento mt28" style="grid-template-columns:1fr 1fr;gap:12px">
+    <div class="bento-item">
+      <h3>Include / exclude the video</h3>
+      <p>By default, Video Mode embeds a recreated visual experience. Add <code>"include the video in the tutorial"</code> or <code>"skip embedding video frames"</code> to control this explicitly.</p>
+    </div>
+    <div class="bento-item">
+      <h3>Widget hints</h3>
+      <p>You can request specific widget types: <code>"include a drag-and-drop reorder challenge"</code>, <code>"build a live code sandbox for the deploy step"</code>, or <code>"no quizzes, just interactive walkthroughs"</code>.</p>
+    </div>
+    <div class="bento-item">
+      <h3>What to focus on</h3>
+      <p>Long videos often wander. Tell it: <code>"focus on the authentication section, skip the setup walkthrough"</code>. The skill will weight the transcript accordingly.</p>
+    </div>
+    <div class="bento-item">
+      <h3>What to skip</h3>
+      <p>If parts of your video are off-topic, off-brand, or just filler, say so: <code>"ignore anything after minute 12 — that was troubleshooting noise"</code>.</p>
+    </div>
+  </div>
+</section>
+
+<div class="div"></div>
+
+<section class="sect" id="s3-scorer">
+  <div class="sect-tag amber">Challenge 1 of 3</div>
+  <h2>Prompt <span class="accent-a">Quality Check</span></h2>
+  <p class="body">Four real prompts. Rate each one by selecting it, then see how it scores on five criteria that map to the skill's internal evaluation. The system uses a 4-dimension benchmark (Technical Correctness, Design Fidelity, Interactive Elements, Pedagogical Quality) — a strong prompt sets up success across all four. The goal: learn to evaluate prompts before you run them.</p>
+
+  <div class="card mt28">
+    <div class="card-label">Challenge — select a prompt to analyze</div>
+    <div class="prompt-scorer">
+      <div class="ps-prompts" id="psPrompts"></div>
+      <div class="ps-criteria" id="psCriteria" style="display:none"></div>
+    </div>
+  </div>
+</section>
+
+<div class="div"></div>
+
+<section class="sect" id="s3-build">
+  <div class="sect-tag">Challenge 2 of 3</div>
+  <h2>Progressive <span class="accent">Build</span></h2>
+  <p class="body">Watch a prompt evolve across three rounds. Each round adds one ingredient that unlocks something the skill couldn't do before. This is how expert prompting works — not one perfect prompt, but an intentional sequence of additions.</p>
+
+  <div class="card mt28">
+    <div class="card-label">Challenge — unlock each round</div>
+    <div class="prog-build">
+      <div class="pb-rounds">
+        <div class="pb-round active" id="pbr0" onclick="pbSelect(0)">Round 1</div>
+        <div class="pb-round locked" id="pbr1" onclick="pbSelect(1)">Round 2</div>
+        <div class="pb-round locked" id="pbr2" onclick="pbSelect(2)">Round 3</div>
+      </div>
+      <div class="pb-display">
+        <div class="pb-prompt-text" id="pbPromptText">Loading...</div>
+      </div>
+      <div class="pb-improvements" id="pbImprovements"></div>
+      <div class="pb-score-bar">
+        <div class="pb-score-label">Prompt quality: <span id="pbScoreLabel">30 / 100</span></div>
+        <div class="pb-score-track"><div class="pb-score-fill" id="pbScoreFill" style="width:30%;background:var(--red)"></div></div>
+      </div>
+      <button class="parsons-check mt16" id="pbNextBtn" onclick="pbNext()">Unlock next round →</button>
+    </div>
+  </div>
+</section>
+
+<div class="div"></div>
+
+<section class="sect" id="s3-skill">
+  <div class="sect-tag green">Open Source</div>
+  <h2>The skill is <span class="accent-g">yours to extend</span></h2>
+  <p class="body">Tutorialinator is MIT licensed and open source. The entire skill specification — the design system, widget library, pedagogical review criteria, and generation pipeline — lives in a single file: <code>SKILL.md</code>.</p>
+  <p class="body mt16">At 1,679 lines, it covers the locked design system (25+ CSS variables, 8 required keyframes), a widget pattern library (11 exploration patterns, 7 challenge patterns), phased generation rules, the pedagogical review agent's 6 audit criteria, and the benchmark rubric the system uses to self-assess. You can fork it, extend the widget library, add new MCP tools, or change the design system entirely. The skill itself can even help you — ask it to find a specific section of <code>SKILL.md</code> and it knows where everything is.</p>
+
+  <div class="card mt28">
+    <div class="card-label">Challenge 3 of 3 — Explore SKILL.md</div>
+    <div id="skillExplorer">
+      <p style="font-size:14px;color:var(--t2);margin-bottom:16px;line-height:1.6">The skill's quiz quality is governed by a specific section in <code>SKILL.md</code>. Which principle prevents recall-only quizzes — the kind where you can answer by scanning the paragraph above?</p>
+      <div class="mc-options" id="skillOptions">
+        <div class="mc-btn" onclick="skillCheck('a')">The Widget Design Principles (challenge-first rule)</div>
+        <div class="mc-btn" onclick="skillCheck('b')">Bloom's taxonomy level 3+ requirement in Quiz Questions</div>
+        <div class="mc-btn" onclick="skillCheck('c')">The Pedagogical Review Agent's criterion 1</div>
+        <div class="mc-btn" onclick="skillCheck('d')">The XP Award Schedule (bonus for correct predictions)</div>
+      </div>
+      <div class="mc-feedback" id="skillFeedback" style="margin-top:12px"></div>
+    </div>
+  </div>
+</section>
+
+<div class="div"></div>
+
+<section class="sect" id="s3-quiz">
+  <div class="sect-tag">Quiz</div>
+  <h2>Fix the <span class="accent">quiz problem</span></h2>
+  <p class="body">The hardest part of getting great output is knowing what to ask for. Recall-only quizzes are the most educationally significant failure pattern — they appear most often in video-mode tutorials, where the agent grounds questions in what was <em>said</em> rather than what should be <em>learned</em>. This quiz tests whether you can diagnose that failure and choose the right prompt fix.</p>
+
+  <div class="card mt28">
+    <div id="quiz3"></div>
+  </div>
+</section>
+
+<section class="sect ch-end" id="s3-end">
+  <h2>Chapter 4 complete</h2>
+  <p class="body">You know the why, the how, the workflow, and the craft. Now go behind the scenes — how was this tool actually built, tested, and refined?</p>
+  <button class="btn-next" onclick="goTo(4)">Behind the Build <svg viewBox="0 0 16 16" fill="currentColor"><path d="M3 8h10M9 4l4 4-4 4"/></svg></button>
+  <div class="ch-end-sub">Chapter 05 — Behind the Build</div>
+</section>
+
+</div><!-- /ch3 -->
+
+<!-- ============================================================ CHAPTER 5 -->
+<div class="chapter" id="ch4">
+
+<header class="hero" id="s4-hero">
+  <div class="hero-eyebrow">Chapter 05</div>
+  <h1 class="hero-title" data-text="How I Built|This">How I Built<br><em>This</em></h1>
+  <p class="hero-desc">A transparent, replicable guide to building the Tutorialinator — from problem to prompts to benchmark. Everything you need to build something like it yourself.</p>
+  <div class="hero-chips">
+    <div class="hero-chip"><span class="hero-chip-icon purple"></span>~15 min read</div>
+  </div>
+  <div class="hero-meta">
+    <div class="hero-meta-line">21 commits · 10 days · 7 tutorials generated · 4-dimension benchmark</div>
+  </div>
+</header>
+
+<div class="div"></div>
+
+<section class="sect" id="s4-problem">
+  <div class="sect-tag">The Problem</div>
+  <h2>Why this <span class="accent">exists</span></h2>
+  <p class="body">I wanted to take a cotidian task — something that's done repetitively, which is sharing knowledge — and share it in a way that it can be actually useful and digestible to other people. Not just yet another video, not just yet another blog, but another medium where folks can interact with it and play with it. A low stakes, noisy, gamified environment for learning. The idea was to take a task that normally requires pedagogical expertise, visual intelligence, and taste — and codify it into a skill that could be repeated easily.</p>
+  <p class="body mt16">The status quo for knowledge sharing inside teams typically looks like this: someone records a Loom, posts it in Slack, and it's never watched twice. Or someone writes a Confluence doc that becomes stale within weeks. The knowledge exists, but the format doesn't serve the learner. Videos are passive — you watch, but you don't practice. Blog posts are static — you read, but nothing responds. Slides decay the moment the presenter leaves the room.</p>
+  <p class="body mt16">The question I started with wasn't "can AI generate tutorials?" It was more specific: <strong>can an agentic workflow take a knowledge source — a screen recording, a topic, a set of URLs — and produce something interactive, pedagogically sound, and portable enough to just send as a file?</strong></p>
+  <p class="body mt16">An agentic workflow was promising because the task requires multiple specialized capabilities that no single tool handles well: video analysis (speech-to-text, frame extraction), pedagogical design (learning objectives, Bloom's taxonomy), visual design (responsive layout, animations, interactivity), and quality verification (E2E testing, structural validation). An LLM can orchestrate all of these — but only if you give it the right tools.</p>
+  <p class="body mt16">If you're building something similar — a system where an LLM orchestrates multiple tools to produce a complex artifact — the rest of this post walks through every decision, prompt, and failure in enough detail that you could rebuild it.</p>
+</section>
+
+<div class="div"></div>
+
+<section class="sect" id="s4-design">
+  <div class="sect-tag">System Design</div>
+  <h2>Architecture <span class="accent">decisions</span></h2>
+  <p class="body">I didn't want something that could just rely on the LLM itself. I wanted something that allowed the LLM to be an orchestrator — which it's incredible at — and pull in other tools. So I started thinking about MCPs and how I could amplify the LLM's capacity. The system ended up with three main components: a <strong>skill file</strong> (SKILL.md — the 1,679-line specification that tells the LLM what to build and how), an <strong>MCP server</strong> (Python, handles video analysis and frame extraction), and an <strong>E2E validation layer</strong> (Playwright, tests the output in a real browser). The LLM I used is Claude (via Claude Code as the IDE). Here's how the architecture took shape.</p>
+
+  <p class="body mt24"><strong>Decision 1: Single HTML file, not React.</strong> The first prototype used React + TypeScript. It was too heavy — the LLM spent more time managing the build system than designing the tutorial content. I didn't want it to focus on building a whole React project — that was just too heavy for what I wanted. It could spend more time focusing on just the pedagogy. A single HTML file with inline CSS and JS is something an LLM can validate end-to-end in one pass. It's also fully portable: send the file, open in a browser, done. No <code>npm install</code>. No dev server.</p>
+
+  <p class="body mt16"><strong>Decision 2: Local-first processing.</strong> Whisper runs locally. FFmpeg runs locally. Playwright runs locally. The only external call is to Claude's API. A tool that processes screen recordings of internal team workflows needs to earn trust — the data stays on the user's machine.</p>
+
+  <p class="body mt16"><strong>Decision 3: Locked design system.</strong> Before I locked the CSS, every tutorial looked different. Some had 4px border-radius, some had 16px. Some used purple accents, some used blue. The "creative freedom" was actually a quality liability. The fix was prescriptive: I defined 25+ CSS custom properties, 8 required keyframes, and specific layout patterns in the skill spec. The LLM copies these verbatim — it no longer decides font sizes, colors, or spacing. The cognitive budget goes to pedagogy instead. This was counterintuitive but immediately improved output consistency.</p>
+
+  <p class="body mt16"><strong>Decision 4: Two MCPs, not one.</strong> Building the MCP was pretty neat — I was pretty much building a tool for the LLM to use on itself. The tutorialinator MCP handles video analysis (Whisper, FFmpeg, scene detection). The playwright MCP handles E2E validation. Keeping them separate means the video tools don't need browser automation dependencies, and the browser tools don't need Python ML dependencies. The tutorialinator MCP is a Python FastMCP server (879 lines) with 8 tools:</p>
+  <p class="body mt16" style="font-family:var(--mono);font-size:13px;line-height:2"><code>download_video</code> · <code>transcribe_with_timestamps</code> · <code>detect_scenes</code> · <code>extract_key_frames</code> · <code>detect_code_in_frames</code> · <code>generate_chapters</code> · <code>extract_slides</code> · <code>get_video_metadata</code></p>
+  <p class="body mt16">It also exposes the full SKILL.md as an MCP resource, so other MCP-compatible LLM clients can read the spec and use the same workflow.</p>
+
+  <p class="body mt24"><strong>If you're replicating this:</strong> The key insight is that the LLM needs tools it can't do itself (video transcription, browser testing) exposed via MCP, and everything else (HTML generation, pedagogical design) should be specified in the skill file, not coded into the server. Keep the server thin — it's a bridge to system capabilities, not a logic layer.</p>
+</section>
+
+<div class="div"></div>
+
+<section class="sect" id="s4-prompts">
+  <div class="sect-tag">Prompt Documentation</div>
+  <h2>The prompts that <span class="accent">built this</span></h2>
+  <p class="body">This is the section I'd want to read if I were trying to build something similar. Every prompt below is one I actually gave to Claude Code — in chronological order, from the very first idea to the open source release. If you copy these prompts and adapt them, you can rebuild this system. That's the whole point.</p>
+  <p class="body mt16">The skill itself — <code>SKILL.md</code>, now 1,679 lines — started as maybe 200 lines. Through 21 commits over 10 days, it grew as each generation run revealed gaps. The prompts below are the story of how that happened.</p>
+
+  <p class="body mt24"><strong>1. The idea</strong></p>
+  <p class="body mt8">I started with what I wanted as an end user. Not the architecture, not the tech stack — just the experience I wanted to create. "Interactive" was the word I kept coming back to.</p>
+
+  <div class="prompt-block" id="prompt0"><button class="copy-btn" onclick="copyPrompt(this)">Copy</button>I want to create a skill that's able to take videos and create rich, interactive tutorials from them. A user should be able to take a video — or a topic — send it to this skill, and have it generate rich interactive content. Quizzes, challenges, gamification. Not a static page. Something people can interact with and play with and maybe get some insight into the creator's thinking. I want to take a cotidian task — sharing knowledge — and make it something people actually engage with.</div>
+
+  <p class="body mt24"><strong>2. The React attempt</strong></p>
+  <p class="body mt8">My instinct was React and TypeScript — that's what I knew. It felt like the natural choice for something interactive.</p>
+
+  <div class="prompt-block" id="prompt1"><button class="copy-btn" onclick="copyPrompt(this)">Copy</button>Let's build this as a React TypeScript project. I want a component-based tutorial system with state management for quiz progress, gamification tracking, and chapter navigation. Set up the project structure, routing, and a build pipeline.</div>
+
+  <p class="body mt24"><strong>3. The pivot question</strong></p>
+  <p class="body mt8">React was too heavy. The LLM was spending more time managing the build system — directory structure, file imports, TypeScript config — than designing the tutorial content. I was burning tokens on infrastructure instead of pedagogy. So I asked.</p>
+
+  <div class="prompt-block" id="prompt2"><button class="copy-btn" onclick="copyPrompt(this)">Copy</button>We tried building this as a React project and it's just too heavy for this use case. The LLM is spending more time on the build system than on the actual learning content. I'm thinking about pivoting to a single self-contained HTML file — one style block, one script block, no build step, no dependencies. Something an LLM can validate end-to-end in one pass. What are the trade-offs? Is it easier for the LLM to work with a single HTML file? Would we lose anything important by dropping React?</div>
+
+  <p class="body mt24"><strong>4. Going single-file</strong></p>
+  <p class="body mt8">The answer convinced me. A single HTML file is something the LLM can reason about completely — no jumping between files, no build artifacts. It's also incredibly portable: send the file, open in a browser, done. No <code>npm install</code>. No dev server.</p>
+
+  <div class="prompt-block" id="prompt3"><button class="copy-btn" onclick="copyPrompt(this)">Copy</button>Let's do it. Pivot to a single self-contained HTML file. One style block, one script block, everything inline. The output should be fully portable — someone should be able to just open the file in a browser. The only external dependency should be Google Fonts. Everything else local and self-contained. Rebuild the skill spec around this constraint.</div>
+
+  <p class="body mt24"><strong>5. Building the MCP server</strong></p>
+  <p class="body mt8">I didn't want the LLM to just guess what was in a video. I wanted it to really understand it — frame by frame, word by word. I started thinking about MCPs and how I could amplify the LLM's capacity. Building this was pretty neat — I was pretty much building a tool for the LLM to use on itself.</p>
+
+  <div class="prompt-block" id="prompt4"><button class="copy-btn" onclick="copyPrompt(this)">Copy</button>I need the LLM to be able to truly analyze videos — not just guess what's in them. Can you build a Python MCP server using FastMCP that gives it real capabilities? Transcribe the audio using local Whisper for speech-to-text, detect scene changes with FFmpeg, extract key frames and encode them so the LLM can actually see what's on screen. Everything should run locally — trust and privacy are non-negotiable. The user's data stays on their machine.</div>
+
+  <p class="body mt24"><strong>6. Adding E2E verification</strong></p>
+  <p class="body mt8">Generating the HTML wasn't enough. I needed the LLM to see what it built — actually render it, click things, check the console. Not just validate code, but validate the experience.</p>
+
+  <div class="prompt-block" id="prompt5"><button class="copy-btn" onclick="copyPrompt(this)">Copy</button>I also need the LLM to be able to verify what it produces. Not just look at the code — actually see the rendered output in a browser, check the console for errors, click buttons, verify that navigation works. Can we set up a Playwright MCP for end-to-end testing? It should be able to take screenshots, check for content leaks between chapters, and verify interactive elements actually function. I want two separate MCPs — keep the video tools and the browser tools independent so their dependencies don't tangle.</div>
+
+  <p class="body mt24"><strong>7. Locking the design system</strong></p>
+  <p class="body mt8">Every tutorial looked different. Some had 4px border-radius, some had 16px. Some used purple, some used blue. All those little decisions around style — is this text larger than that, are these in rows or columns — were adding up and dragging the cognitive load of the model. I needed to take away its autonomy on aesthetics so it could focus on learning.</p>
+
+  <div class="prompt-block" id="prompt6"><button class="copy-btn" onclick="copyPrompt(this)">Copy</button>The outputs look inconsistent — every tutorial has different spacing, colors, border-radius, font sizes. I want to lock the design system. Define CSS custom properties, required keyframes, and specific layout patterns that get copied verbatim into every output. The LLM should not decide font sizes, colors, or spacing. Take away its autonomy on style so it can spend its cognitive budget on pedagogy instead. What CSS variables and keyframes should we define to make every output look like part of the same series?</div>
+
+  <p class="body mt24"><strong>8. Solving the output size problem</strong></p>
+  <p class="body mt8">A single tutorial is 1,500–2,500 lines of HTML. Claude's output token limit means it can't write that in one pass — tutorials kept cutting off mid-JavaScript. I needed a phasing system.</p>
+
+  <div class="prompt-block" id="prompt7"><button class="copy-btn" onclick="copyPrompt(this)">Copy</button>We have a problem. The output file is going to be 1,500–2,500 lines and it's exceeding Claude's output token limit — tutorials keep cutting off mid-code. How should we handle this? I'm thinking some kind of phased generation — maybe the CSS and boilerplate first, then chapter by chapter, with validation between each phase so nothing gets lost. What's the best way to structure this?</div>
+
+  <p class="body mt24"><strong>9. Testing and finding failures</strong></p>
+  <p class="body mt8">I generated about six tutorials and started looking at them critically. Some things were great — brace balance was perfect in every output, quizzes showed up consistently, the design system held. But code sandboxes were missing in half the outputs, keyframes kept getting dropped, and the quizzes in video-mode tutorials were just testing recall. "What protocol does X use?" — where the answer is literally in the paragraph above. That's not teaching anyone anything.</p>
+
+  <div class="prompt-block" id="prompt8"><button class="copy-btn" onclick="copyPrompt(this)">Copy</button>I've generated about six tutorials now and I'm seeing patterns in what's failing. Code sandboxes are missing in half the outputs — the agent seems to skip them when the topic isn't obviously "code." The confettiBurst keyframe keeps getting dropped. And the quizzes in video-mode tutorials are just testing recall — the answer is literally in the paragraph above the question. These aren't teaching anything. What should we add to the skill spec to address each of these failure patterns?</div>
+
+  <p class="body mt24"><strong>10. The pedagogical review agent</strong></p>
+  <p class="body mt8">The generation agent couldn't effectively review its own work. I needed a second pair of eyes — another agent that comes in after the learning design phase and audits the plan before any HTML gets written.</p>
+
+  <div class="prompt-block" id="prompt9"><button class="copy-btn" onclick="copyPrompt(this)">Copy</button>After the learning design phase, I want to spawn a separate review agent before any HTML generation starts. It should audit the plan for: recall-only quizzes, missing interactive exercises, passive widgets that don't require learner input, scaffolding gaps where difficulty jumps too fast, untested misconceptions, and vague learning objectives like "understand X" instead of measurable actions. It should return a priority list of fixes. Can we build this into the skill workflow?</div>
+
+  <p class="body mt24"><strong>11. Quiz quality enforcement</strong></p>
+  <p class="body mt8">The review agent helped with scaffolding and missing exercises, but video-mode quizzes were still weak. I needed a more specific check — something grounded in learning theory that the agent couldn't argue around.</p>
+
+  <div class="prompt-block" id="prompt10"><button class="copy-btn" onclick="copyPrompt(this)">Copy</button>The quiz quality in video mode is still the weakest dimension. I want an explicit rule: quiz questions must require Bloom's taxonomy Level 3 (Application) or higher. The learner must apply, analyze, or evaluate — not scan for the answer in the text above. Add this check to the pedagogical review: "Can this question be answered by someone who understands the concept but never watched this specific video?" If the answer is no, rewrite the question. How do we enforce this without making the prompts brittle?</div>
+
+  <p class="body mt24"><strong>12. Self-healing install</strong></p>
+  <p class="body mt8">I really wanted a self-healing experience — the user clicks something and it's smart enough and agentic enough to heal itself and keep going. No manual Python setup, no MCP configuration, no "please install X" error messages.</p>
+
+  <div class="prompt-block" id="prompt11"><button class="copy-btn" onclick="copyPrompt(this)">Copy</button>I want the setup experience to be self-healing. When someone installs this, it should verify the Python virtual environment, configure the MCPs, and set up Playwright — and if anything is broken, fix it automatically before continuing. The user should never see a setup error. Build an auto-setup script that runs before every tutorial generation and heals itself. I also want a one-line curl install — someone should be able to pull this from GitHub and have it running with a single command.</div>
+
+  <p class="body mt24"><strong>13. Open sourcing</strong></p>
+  <p class="body mt8">The tool worked. I wanted the documentation to be as replicable as the tool itself.</p>
+
+  <div class="prompt-block" id="prompt12"><button class="copy-btn" onclick="copyPrompt(this)">Copy</button>Let's make this open source. Push it to GitHub. Write an install script, an uninstall script, and a README that explains what this is, how to install it, and how to use it. The README should be good enough that someone who's never seen this can get it running. Include the architecture diagram. Add an MIT license. I want this to be something people can actually pick up and use — or fork and adapt for their own skills.</div>
+
+  <p class="body mt24"><strong>14. Designing the benchmark</strong></p>
+  <p class="body mt8">I kept finding the same failure patterns over and over. I needed a way to measure quality systematically — not before building, but after. The rubric should come from the failures I'd already seen.</p>
+
+  <div class="prompt-block" id="prompt13"><button class="copy-btn" onclick="copyPrompt(this)">Copy</button>I need a way to measure the quality of what this produces. I want to design a benchmark rubric based on the actual failure patterns we've seen — not hypothetical ones. It should cover technical correctness, design fidelity, interactive elements, and pedagogical quality. Each dimension needs clear scoring anchors so I know what a 3 looks like versus a 5. I also want the agent to be able to self-assess against this rubric at the end of a generation run — and then tune the skill based on where it scored low. Can you help me design this? I want it to be a living benchmark — something that evolves as the system improves.</div>
+
+  <p class="body mt24">Those 14 prompts, adapted and refined over 10 days and 21 commits, produced the 1,679-line SKILL.md, the MCP server, the install scripts, the benchmark rubric, and the workflow that ties them together. The skill didn't start at 1,679 lines — it grew because each generation run revealed gaps, and each gap became a new constraint.</p>
+
+  <p class="body mt24"><strong>If you're replicating this:</strong> Start with your user story — what should the end user be able to do? Then build, test, find failures, and add constraints. Don't try to write the perfect spec upfront. The generate → evaluate → constrain → regenerate loop is the whole methodology. Copy prompt 1, paste it into Claude Code, and go from there.</p>
+</section>
+
+<div class="div"></div>
+
+<section class="sect" id="s4-process">
+  <div class="sect-tag">Building Process</div>
+  <h2>Ten days, <span class="accent">twenty-one commits</span></h2>
+  <p class="body">The entire project was built in 10 days (February 13–22, 2026) using Claude Code as the primary development environment. Everything — the SKILL.md, the MCP server, the install scripts, the benchmark — was written through Claude Code. Here's the timeline.</p>
+
+  <div class="card mt28">
+    <div class="card-label">Development Timeline</div>
+    <div class="blog-timeline">
+      <div class="tl-item done">
+        <div class="tl-date">Feb 13</div>
+        <div class="tl-text"><strong>Initial commit</strong> — Core SKILL.md, MCP server with 5 tools (transcribe, detect scenes, extract frames, detect code, generate chapters), auto-setup script. <span class="tl-hash">6ad37bf</span></div>
+      </div>
+      <div class="tl-item done">
+        <div class="tl-date">Feb 13</div>
+        <div class="tl-text"><strong>First public release</strong> — README, MIT license, install.sh and uninstall.sh scripts. The one-line curl installer. <span class="tl-hash">e89e680</span></div>
+      </div>
+      <div class="tl-item done">
+        <div class="tl-date">Feb 14</div>
+        <div class="tl-text"><strong>Security fix</strong> — Found and patched an <code>eval()</code> call in server.py that should have been a safe parser. Fixed broken self-healing in auto-setup. <span class="tl-hash">e004ebc</span></div>
+      </div>
+      <div class="tl-item done">
+        <div class="tl-date">Feb 15–17</div>
+        <div class="tl-text"><strong>Validation overhaul</strong> — Added HTML structure validation (catches orphaned divs). Added Playwright content leak detection. Tightened remaining validation gaps in SKILL.md. <span class="tl-hash">8c036c5, ca6ce2e</span></div>
+      </div>
+      <div class="tl-item done">
+        <div class="tl-date">Feb 18</div>
+        <div class="tl-text"><strong>Mode expansion</strong> — As I was building for video I realized that this could actually apply to any topic — teach me something, web URLs, fetch this site and teach me about it. Added Audio, Codebase, and Slide Deck input modes. Added <code>extract_slides</code> tool to MCP. <span class="tl-hash">222a17a</span></div>
+      </div>
+      <div class="tl-item done">
+        <div class="tl-date">Feb 19</div>
+        <div class="tl-text"><strong>Benchmark created</strong> — Wrote the 4-dimension evaluation rubric. Scored 3 test cases. Identified the three systematic failure patterns. <span class="tl-hash">48d320c</span></div>
+      </div>
+      <div class="tl-item done">
+        <div class="tl-date">Feb 20–21</div>
+        <div class="tl-text"><strong>External compatibility</strong> — Exposed SKILL.md as an MCP resource and added MCP prompts so other LLM clients can use the same workflow. <span class="tl-hash">406a431, 5435733</span></div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-date">Feb 22</div>
+        <div class="tl-text"><strong>This tutorial</strong> — Generated from a 17-minute screen recording using the tool itself. This blog chapter was added as the final piece.</div>
+      </div>
+    </div>
+  </div>
+
+  <p class="body mt24"><strong>Tools and stack:</strong> Claude Code (primary IDE and all code generation), Claude Opus 4 (the LLM), Python 3.10+ (MCP server), FFmpeg (video processing), OpenAI Whisper (local speech-to-text), Playwright + Chromium (E2E testing), FastMCP (MCP framework), yt-dlp (video download).</p>
+
+  <p class="body mt24"><strong>Frustrations and bottlenecks — the honest parts:</strong></p>
+  <p class="body mt16"><strong>Output token limits</strong> were the biggest recurring frustration. A typical tutorial is 1,500–2,500 lines of HTML. Claude's output token limit means this can't be written in one pass. The phased generation system solves this — CSS first, then chapter by chapter, with validation between phases — but it adds complexity and occasionally produces seam artifacts where one phase's output doesn't perfectly match the next.</p>
+  <p class="body mt16"><strong>Cross-device install failures</strong> cost me a day. The install script initially used <code>set -euo pipefail</code>, which caused silent failures on some systems when a non-critical command returned non-zero. Fixed by switching to <code>set -u</code> and handling errors explicitly. <span class="tl-hash">8f8f868</span></p>
+  <p class="body mt16"><strong>macOS filename quirks:</strong> Screen recordings on macOS include U+202F (narrow no-break space) before AM/PM in filenames. It's invisible in Finder but breaks path resolution in Python. Required a dedicated <code>resolve_video_path</code> function in the MCP server. This one took hours to debug because the error was "file not found" and the file was clearly right there.</p>
+  <p class="body mt16"><strong>Truth and accuracy</strong> is the hardest problem. In video mode, the LLM occasionally generates content that wasn't in the transcript. There are times when it's produced things that are just not true — it created a bunch of things that I didn't say in my video. Can't have that. The pedagogical review agent is supposed to cross-check, but this failure mode is structural to how LLMs work and requires ongoing vigilance.</p>
+</section>
+
+<div class="div"></div>
+
+<section class="sect" id="s4-usage">
+  <div class="sect-tag">Real Usage</div>
+  <h2>Seven tutorials <span class="accent">later</span></h2>
+  <p class="body">To understand whether the system actually works, I generated seven tutorials across different topics and input modes. Each one revealed something about the system's strengths and blind spots.</p>
+
+  <div class="card mt28">
+    <div class="card-label">Generated tutorials</div>
+    <table class="bench-table">
+      <tr><th>Tutorial</th><th>Mode</th><th>Chapters</th><th>Size</th><th>Notable</th></tr>
+      <tr><td>css-grid</td><td><span class="tag">Topic</span></td><td>4</td><td>69 KB</td><td>Strongest all-around output</td></tr>
+      <tr><td>goose-ai</td><td><span class="tag">Video</span></td><td>4</td><td>86 KB</td><td>7/8 keyframes, 2 sandboxes</td></tr>
+      <tr><td>goose-workflow</td><td><span class="tag">Video</span></td><td>5</td><td>67 KB</td><td>Only video output with all 8 keyframes</td></tr>
+      <tr><td>goose-extensions</td><td><span class="tag">Video</span></td><td>3</td><td>41 KB</td><td>Failed benchmark — missing sidebar, recall quizzes</td></tr>
+      <tr><td>prototyping</td><td><span class="tag">Video</span></td><td>5</td><td>88 KB</td><td>Best quiz quality in entire batch (all L3+)</td></tr>
+      <tr><td>vibe-coding</td><td><span class="tag">Video</span></td><td>5</td><td>1.9 MB</td><td>Embedded base64 video inline</td></tr>
+      <tr><td style="color:var(--t3)">python-benefits</td><td><span class="tag">Topic</span></td><td>0</td><td>10 KB</td><td style="color:var(--t3)">Intentional stub (excluded from scoring)</td></tr>
+    </table>
+  </div>
+
+  <p class="body mt24"><strong>What worked consistently:</strong> Brace balance was perfect in every output — no structural JS/CSS corruption across any tutorial. Quizzes were present in 83% of outputs. The design system was faithfully reproduced — all tutorials look like part of the same series, which was the whole point of locking the CSS.</p>
+  <p class="body mt16"><strong>What didn't:</strong> Code sandboxes were missing in 50% of outputs. The <code>confettiBurst</code> keyframe was missing in 50%. Video-mode quizzes consistently tested recall rather than understanding. These became the three failure patterns the benchmark was designed to catch — more on that in the next section.</p>
+</section>
+
+<div class="div"></div>
+
+<section class="sect" id="s4-bench">
+  <div class="sect-tag">Benchmarking</div>
+  <h2>Measuring what <span class="accent">matters</span></h2>
+  <p class="body">The benchmark was designed <em>after</em> the first batch of tutorials, not before. That sequence matters — the rubric was shaped by real failures I'd already observed, not hypothetical ones. If you're building a similar system, I'd recommend the same approach: generate first, then design your evaluation around the actual failure modes you see.</p>
+  <p class="body mt16">The full rubric is documented in <a href="https://github.com/masudl-hub/tutorialinator" target="_blank"><code>tutorialinator-benchmark.md</code></a> (422 lines). Here's how I designed it and what it revealed.</p>
+
+  <p class="body mt24"><strong>Step 1: Define dimensions.</strong> I chose four equally-weighted dimensions based on the failure modes I'd observed:</p>
+  <p class="body mt16"><strong>A — Technical Correctness (25%):</strong> Can the tutorial run without errors? Checks brace balance, all 8 required keyframes (<code>fadeUp</code>, <code>shake</code>, <code>confettiBurst</code>, <code>timerArc</code>, <code>particleBurst</code>, <code>charReveal</code>, <code>fadeIn</code>, <code>scaleIn</code>), valid chapter structure, and ID resolution. Scored 1–5 with clear anchors: a 5 means everything present; a 2 means missing chapter structure or 5 or fewer keyframes.</p>
+  <p class="body mt16"><strong>B — Design System Fidelity (25%):</strong> Does it look like a Tutorialinator output? Checks for 7 required UI elements: CSS variables (<code>--bg</code>), noise overlay (<code>body::after</code>), Google Fonts link, sidebar, cursor glow, scroll progress bar, and toast notification. A 5 means all 7 present.</p>
+  <p class="body mt16"><strong>C — Interactive Elements (25%):</strong> Can the learner <em>do</em> something, not just read? Each chapter should have at least one challenge element (sandbox, config editor, drag-and-drop, decision scenario) AND a quiz AND the XP system AND 3D card tilt. Important nuance: I wrote into the rubric that a low sandbox count alone doesn't lower the score <em>if</em> an equivalent interactive widget fills that role. Human judgment is required here.</p>
+  <p class="body mt16"><strong>D — Pedagogical Quality (25%):</strong> Do quiz questions test understanding or just scanning? This is human-scored using Bloom's taxonomy. For each quiz question, I ask: "Could a learner answer this by scanning the 3 paragraphs before it?" If yes, it's recall (L1/L2). If it requires applying a rule to a new scenario, it's application (L3+). A 5 means all questions are L3+.</p>
+
+  <p class="body mt24"><strong>Step 2: Set pass criteria.</strong> A passing output must score at least 3.0/5.0 on <em>every</em> dimension and at least 3.5/5.0 overall. I also defined hard-fail gates that disqualify an output regardless of other scores: file under 20KB (it's a stub), zero quizzes, zero chapters, or all keyframes missing.</p>
+
+  <p class="body mt24"><strong>Step 3: Select test cases.</strong> I picked three tutorials to span the quality range:</p>
+  <p class="body mt8">1. <strong>css-grid</strong> (Topic mode, 69KB) — the "typical good case," a technical topic with natural widget opportunities</p>
+  <p class="body mt8">2. <strong>goose-extensions</strong> (Video mode, 41KB) — the edge case where multiple spec requirements were dropped</p>
+  <p class="body mt8">3. <strong>prototyping</strong> (Video mode, 88KB) — a counterpoint: technically strong with the best quiz quality, but with the same sandbox gap as the failure case</p>
+
+  <p class="body mt24"><strong>Step 4: Run automated checks, then score manually.</strong> The automated checks run on all outputs:</p>
+
+  <table class="bench-table mt16">
+    <tr><th>Check</th><th>Pass rate</th><th>Notes</th></tr>
+    <tr><td>Brace balance</td><td>6/6 (100%)</td><td>No structural JS/CSS corruption in any tutorial</td></tr>
+    <tr><td>Quizzes present</td><td>5/6 (83%)</td><td>Most reliably implemented element</td></tr>
+    <tr><td>Sidebar present</td><td>5/6 (83%)</td><td>goose-extensions was the only one missing it</td></tr>
+    <tr><td>All 8 keyframes</td><td>3/6 (50%)</td><td>confettiBurst was the most commonly missing</td></tr>
+    <tr><td>Code sandboxes</td><td>3/6 (50%)</td><td>Systematically omitted for non-code topics</td></tr>
+  </table>
+
+  <p class="body mt16">Then I scored each test case manually against the rubric anchors:</p>
+
+  <div class="card mt16">
+    <div class="card-label">Scored results</div>
+    <table class="bench-table">
+      <tr><th>Test Case</th><th>A: Technical</th><th>B: Design</th><th>C: Interactive</th><th>D: Pedagogy</th><th>Total</th><th>Pass?</th></tr>
+      <tr><td>css-grid</td><td>5.0</td><td>5.0</td><td>4.0</td><td>4.0</td><td><strong>4.5</strong></td><td>Yes</td></tr>
+      <tr><td>goose-extensions</td><td>3.0</td><td>3.0</td><td>2.0</td><td>2.0</td><td><strong>2.5</strong></td><td>No</td></tr>
+      <tr><td>prototyping</td><td>5.0</td><td>5.0</td><td>3.0</td><td>5.0</td><td><strong>4.5</strong></td><td>Yes</td></tr>
+    </table>
+  </div>
+
+  <p class="body mt24"><strong>Pass rate: 2/3 (67%).</strong> The goose-extensions failure concentrated in two dimensions — interactive elements (zero sandboxes, missing sidebar) and pedagogical quality (both quiz questions were pure recall). The prototyping tutorial is the interesting case: it had the <em>best</em> quiz quality in the entire batch (all 5 questions at Bloom's L3+) but the same sandbox gap. That told me these two problems are separable — fixing quiz quality doesn't fix sandbox omission, and vice versa.</p>
+
+  <p class="body mt24"><strong>Step 5: Identify systematic failure patterns.</strong> Three patterns emerged across all outputs:</p>
+
+  <p class="body mt16"><strong>Failure 1: Code sandboxes systematically omitted (3/6 outputs, 50%).</strong> When the topic isn't "obviously runnable code," the agent treats the sandbox as optional. A Goose extensions tutorial should have a YAML config sandbox; a prototyping tutorial should have a prompt-builder. But neither is "code" in the traditional sense, so the agent skips it. The fix I added to the spec: explicit guidance that "sandbox" doesn't mean "code editor" — it means "structured input area relevant to the topic."</p>
+
+  <p class="body mt16"><strong>Failure 2: confettiBurst keyframe missing (3/6 outputs, 50%).</strong> This keyframe is only used for the quiz correct-answer sparkle effect. When the agent writes quizzes with a slightly different feedback pattern, it omits the keyframe as "unused." Low functional impact, but the polish gap is real. The fix: move it into the required keyframe block that gets copied verbatim before any chapter content.</p>
+
+  <p class="body mt16"><strong>Failure 3: Video-mode quizzes test recall, not understanding (all video-mode outputs).</strong> This is the most educationally significant failure. Quiz questions in video-mode outputs ask about specific facts from the transcript. Example from goose-extensions: "What protocol do Goose extensions use to communicate?" The exact phrase "Model Context Protocol (MCP)" appears in the sentence directly above the quiz. A learner answers in 3 seconds by scanning up — no understanding required.</p>
+  <p class="body mt16">Compare that to the prototyping tutorial's strongest quiz: "You asked your AI tool to build a transaction categorization system. Its plan has 4 rules but no error handling for edge cases. What is your best move?" This requires applying a design principle to a new scenario. No scanning helps.</p>
+  <p class="body mt16">The fix I added to the spec: an explicit check in the pedagogical review prompt — "Can this question be answered by someone who understands the concept but never watched this specific video? If no, rewrite it." It helps, but video-mode quizzes are still the weakest dimension.</p>
+
+  <p class="body mt24"><strong>The living benchmark.</strong> Benchmarking is this living thing — because the agent can modify the skill at the end of the process once it's been assessed, it can be honest and say "here are the pieces in the skill that I need to work on." That's going to cause some drift, but it's a worthwhile exploration to see how the system can self-improve — not for reward chasing, but for genuine improvement. The benchmark log tables in <code>tutorialinator-benchmark.md</code> are designed for exactly this: one-shot scores, then two-shot refinements after targeted fixes.</p>
+  <p class="body mt24"><strong>If you're designing your own benchmark:</strong> Start from your actual failures, not from theory. Score with clear anchors (what does a 3 look like vs. a 5?). Include both automated checks (fast, reproducible) and human scoring (catches quality issues machines can't). Build in hard-fail gates to catch degenerate outputs. And design the rubric so the agent can eventually self-assess — that's the path to a self-improvement loop.</p>
+</section>
+
+<div class="div"></div>
+
+<section class="sect" id="s4-reflect">
+  <div class="sect-tag">Reflection</div>
+  <h2>Looking <span class="accent">back</span></h2>
+  <p class="body">Building Tutorialinator was an exercise in discovering what matters through failure. The system that exists now is meaningfully different from what was imagined on day one — not because the vision changed, but because the implementation taught lessons about what the vision actually required.</p>
+
+  <p class="body mt24"><strong>What worked well:</strong></p>
+  <p class="body mt8"><strong>Single-file HTML</strong> — the portability argument proved out. Send the file, open it, done. No install, no server, no build step. This is the feature people notice first.</p>
+  <p class="body mt8"><strong>Locked design system</strong> — taking away visual decisions from the LLM was the highest-leverage change. Output quality jumped immediately.</p>
+  <p class="body mt8"><strong>Self-healing install</strong> — the auto-setup and install scripts handle edge cases automatically. Building something like this was super cool. Using it is so much easier — you pull it down from GitHub with the curl, it runs the installation script, that's self-healing... once it's ready you restart and then you can go from there.</p>
+  <p class="body mt8"><strong>Local-first processing</strong> — trust by default. Users are more willing to process sensitive recordings when the data stays on their machine.</p>
+
+  <p class="body mt24"><strong>What didn't:</strong></p>
+  <p class="body mt8"><strong>Quiz quality in video mode</strong> — the most educationally significant failure. The agent grounds quiz questions in what was <em>said</em> rather than what should be <em>learned</em>. This requires ongoing prompt refinement.</p>
+  <p class="body mt8"><strong>Sandbox omission for non-code topics</strong> — the agent needs explicit guidance that "sandbox" doesn't mean "code editor." It means "structured input area relevant to the topic."</p>
+  <p class="body mt8"><strong>Truth and accuracy</strong> — the LLM occasionally generates content not present in the source video. The hardest problem to solve structurally.</p>
+  <p class="body mt8"><strong>Output token limits</strong> — phased generation works but adds complexity and occasional seam artifacts between phases.</p>
+
+  <p class="body mt24"><strong>How prompts evolved:</strong></p>
+  <p class="body mt16">The prompt evolution followed a pattern: generate, evaluate, identify failure, add constraint, regenerate. The initial SKILL.md was mostly design system spec — generated tutorials looked good but taught poorly. Adding Bloom's taxonomy requirements improved topic-mode quiz quality but not video-mode. Adding the pedagogical review sub-agent caught scaffolding gaps but the recall quiz problem persisted. Adding an explicit check ("Can this be answered without watching the video?") helped, but video-mode quizzes are still the weakest dimension.</p>
+  <p class="body mt16">The lesson: prompt engineering for complex systems isn't about writing one great prompt. It's about building a feedback loop where failures inform constraints, and constraints accumulate into a robust specification.</p>
+
+  <p class="body mt24"><strong>Would I keep using this system?</strong></p>
+  <p class="body mt16">Yes, with caveats. The system is genuinely useful for its intended purpose. Recording a video walkthrough and getting an interactive tutorial in return is a meaningful time saver — especially for internal team knowledge sharing where "good enough" quality is fine and the alternative is a Loom that nobody watches twice.</p>
+  <p class="body mt16">The caveats are real: you still need to review the output for accuracy (especially in video mode), the sandbox gap means some tutorials need manual touchup, and the benchmark shows a 67% pass rate — not 100%. But the 67% that pass are genuinely good, and the 33% that fail are fixable through iteration.</p>
+  <p class="body mt16">The most promising direction is a self-improvement loop: embedding the benchmark rubric into the skill itself so the agent can score its own output, identify gaps, and refine in a second pass. The benchmark log tables in <code>tutorialinator-benchmark.md</code> are designed for exactly this — one-shot scores followed by two-shot refinements.</p>
+
+  <a class="repo-link-card mt28" href="https://github.com/masudl-hub/tutorialinator" target="_blank" rel="noopener">
+    <svg class="repo-link-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
+    <div class="repo-link-text">
+      <div class="repo-link-label">View the full source on GitHub</div>
+      <div class="repo-link-desc">github.com/masudl-hub/tutorialinator — MIT Licensed</div>
+    </div>
+    <svg class="repo-link-arrow" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
+  </a>
+</section>
+
+<section class="sect ch-end" id="s4-end" style="background:radial-gradient(ellipse 60% 60% at 50% 50%,rgba(139,92,246,0.06) 0%,transparent 70%)">
+  <h2>That's the whole build.</h2>
+  <p class="body">Problem, architecture, prompts, process, usage, benchmark, reflection. The code is open source, the benchmark is public, and the tutorial you've been reading was built by the tool itself. If you build something with it — or something like it — I'd love to hear about it.</p>
+  <div style="margin-top:32px;font-family:var(--mono);font-size:13px;color:var(--t3)">
+    <div>Total XP earned: <span id="finalXp" style="color:var(--purple)">0</span></div>
+    <div style="margin-top:8px;color:var(--t4)">github.com/masudl-hub/tutorialinator</div>
+  </div>
+  <div class="ch-end-sub" style="margin-top:24px">MIT License · Built with Claude Code · Open Source</div>
+</section>
+
+</div><!-- /ch4 -->
+
+<script>
+/* ============================================================
+   1. STATE & DATA
+   ============================================================ */
+var currentCh = 0;
+var xp = 0;
+var interacted = new Set();
+var pipeStep = -1;
+var mcScenario = 0;
+var mcDone = [false, false, false];
+var curlDone = new Set();
+var diagDone = [false, false];
+var pbRound = 0;
+var pbUnlocked = 1;
+var fixClicked = [false, false, false];
+var activeTermTab = 0;
+var skillDone = false;
+var parsonsCorrect = false;
+
+var mcScenarios = [
+  {
+    txt: "You've spent the last year building a custom git branching workflow for your team. You want to record a 15-minute walkthrough and turn it into something new hires can actually practice with.",
+    options: ['Video Mode', 'Topic Mode', 'Research Mode', 'Deep Research'],
+    correct: 0,
+    explanations: [
+      'Correct! You have a video recording of your specific workflow. Video Mode will use Whisper to extract your transcript, FFmpeg to analyze your screen, and build a tutorial grounded in what you actually showed — not a generic git tutorial.',
+      'Topic Mode draws on Claude\'s training data. Your custom workflow is specific to your team — Claude can\'t know your internal branch naming conventions, merge rules, or tooling without the video.',
+      'Research Mode is for web URLs. Your video is a local file, not a web resource.',
+      'Deep Research searches the web for external sources. Your proprietary workflow isn\'t on the web — and even if related content was, it wouldn\'t capture your specific process.'
+    ]
+  },
+  {
+    txt: "A colleague wants to understand TypeScript generics. They've seen them in code reviews but never learned them systematically. You have no video and no specific articles in mind — just want a solid interactive tutorial built from the ground up.",
+    options: ['Video Mode', 'Topic Mode', 'Research Mode', 'Deep Research'],
+    correct: 1,
+    explanations: [
+      'You don\'t have a video. Video Mode requires a video file or URL. Without one, this mode can\'t run.',
+      'Correct! Topic Mode is exactly right here. You have a well-known subject (TypeScript generics), Claude has deep training knowledge on it, and there\'s no video or specific source material to analyze. Topic Mode builds a complete curriculum from scratch.',
+      'Research Mode works with URLs you provide. You said you have no specific articles in mind — and even if you did, Topic Mode would be simpler for a standard programming concept.',
+      'Deep Research is valuable when a topic is cutting-edge, contested, or needs synthesis from 5–15 sources. TypeScript generics is well-documented and stable — Deep Research would be overkill.'
+    ]
+  },
+  {
+    txt: "Your team found three excellent internal architecture decision records (ADRs) on Confluence, plus two public articles, that together tell the full story of why your microservices use event sourcing. You want a tutorial that synthesizes all five into one cohesive narrative.",
+    options: ['Video Mode', 'Topic Mode', 'Research Mode', 'Deep Research'],
+    correct: 2,
+    explanations: [
+      'No video here — you have documents and articles, not a recording. Video Mode can\'t help.',
+      'Topic Mode uses Claude\'s knowledge. But your ADRs contain your team\'s specific reasoning, constraints, and context that Claude doesn\'t know. Using Topic Mode would produce a generic event sourcing tutorial, not one grounded in your actual decisions.',
+      'Correct! Research Mode is built for exactly this case: you have specific source URLs to synthesize. Pass all five URLs to the skill and it will fetch, read, and weave them into a single cohesive tutorial with citations.',
+      'Deep Research searches the web for external sources. You already have your sources. Using Deep Research would ignore your specific documents and go find random event sourcing articles instead.'
+    ]
+  }
+];
+
+var curlData = {
+  'curl': { flag: 'curl', name: 'The tool', desc: 'curl is a command-line tool for transferring data from or to a server. Here it\'s fetching a file from GitHub\'s raw content CDN.' },
+  'f': { flag: '-f', name: 'Fail silently on errors', desc: 'Makes curl return a non-zero exit code on HTTP errors (4xx, 5xx) instead of printing the error page. Without -f, a 404 page would be piped into bash and executed as code.' },
+  's': { flag: '-s', name: 'Silent mode', desc: 'Suppresses the progress bar and error messages. Combined with -S, this gives you clean output: nothing on success, errors shown on failure.' },
+  'S': { flag: '-S', name: 'Show errors (with -s)', desc: 'Re-enables error messages that -s would suppress. The combination -sS means: silent normally, but show errors if they occur. You want to know if something went wrong.' },
+  'L': { flag: '-L', name: 'Follow redirects', desc: 'Tells curl to follow HTTP redirects. GitHub\'s raw.githubusercontent.com URLs occasionally redirect. Without -L, curl would stop at the redirect and you\'d get nothing.' },
+  'url': { flag: 'URL', name: 'Raw GitHub file URL', desc: 'This is the direct link to the install.sh file in the GitHub repo, via the raw.githubusercontent.com CDN. This serves the file\'s plain text content, not the GitHub HTML page.' }
+};
+
+var termTabs = [
+  [
+    '# Video Mode — with a local file',
+    '/tutorialinator ~/Desktop/demo.mp4',
+    '',
+    '# With context and audience:',
+    '/tutorialinator ~/Desktop/demo.mp4 This is our',
+    'deploy process walkthrough. Audience: junior devs',
+    'who know Docker but not Kubernetes. Include the',
+    'key frame at the troubleshooting section.'
+  ],
+  [
+    '# Topic Mode — describe what to teach',
+    '/tutorialinator "teach me TypeScript generics"',
+    '',
+    '# With audience layering:',
+    '/tutorialinator Build a tutorial on TypeScript',
+    'generics. Audience: devs who know JS but are',
+    'new to TS. Include a progressive build challenge',
+    'and focus on real-world patterns, not textbook examples.'
+  ],
+  [
+    '# Research Mode — provide URLs',
+    '/tutorialinator Build a tutorial from:',
+    'https://react.dev/learn/thinking-in-react',
+    'https://overreacted.io/algebraic-effects-for-rest',
+    '',
+    '# The skill fetches each URL, synthesizes them,',
+    '# and builds a unified tutorial with citations.'
+  ],
+  [
+    '# Deep Research Mode — keyword triggers it',
+    '/tutorialinator Research Rust ownership and',
+    'borrowing deeply and create a tutorial',
+    '',
+    '# Or: "deep dive into WebAssembly"',
+    '# The skill searches 5-15 quality sources,',
+    '# filters by quality, and synthesizes them.',
+    '# Expect longer runtime than other modes.'
+  ]
+];
+
+var fixData = [
+  {
+    id: 'fix0',
+    issue: 'Path contains spaces — must be quoted',
+    explanation: 'File paths with spaces need quoting in shell. The path "~/Desktop/demo recording final v3.mov" has three spaces. Unquoted, bash splits this into separate arguments. Use: <code>"~/Desktop/demo recording final v3.mov"</code>',
+    fix: '"~/Desktop/demo recording final v3.mov"'
+  },
+  {
+    id: 'fix1',
+    issue: '"for engineers" — too narrow an audience',
+    explanation: 'If your team includes non-engineers (PMs, designers, ops), a tutorial "for engineers" will use jargon they can\'t follow. Consider: "for engineers and non-technical stakeholders — layer the content so both can follow."',
+    fix: '"for engineers and non-technical stakeholders — layer content for both"'
+  },
+  {
+    id: 'fix2',
+    issue: '"Don\'t include the video" removes the best asset',
+    explanation: 'Video Mode analyzes your recording for a reason — the frames and transcript are your primary source material. "Don\'t include the video" cuts the visual evidence that grounds the tutorial. Better: specify which parts to include, or omit this instruction entirely and let the skill decide what\'s helpful.'
+    , fix: '"include key frames from the critical steps"'
+  }
+];
+
+var quizData = [
+  {
+    q: 'You have a 20-minute screen recording of your team\'s deploy process. You want new hires to practice the steps, not just watch. Your team includes both senior engineers and a new PM who has never used a terminal. What\'s the most important addition to your invocation?',
+    opts: [
+      { t: 'Nothing — Video Mode automatically tailors tutorials to mixed audiences', c: false, e: 'Video Mode analyzes your video content carefully, but it doesn\'t know your audience context unless you tell it. Without audience specification, it defaults to a reasonable middle — which may be too technical for the PM and too basic for senior engineers.' },
+      { t: 'Specify the mixed audience and ask for layered content plus hands-on practice widgets', c: true, e: 'Correct! "Audience: engineers and a non-technical PM — layer content for both" directly shapes the quiz questions, challenge difficulty, and how much jargon gets explained. Adding "include hands-on practice widgets" tells the skill to use Parsons problems and Fix-the-Bug challenges over passive explanation.' },
+      { t: 'Switch to Topic Mode so Claude can describe a generic deploy process without the recording\'s noise', c: false, e: 'Your custom deploy process is the point. Topic Mode would generate a generic CI/CD tutorial that ignores your specific tooling, commands, and team conventions. The recording\'s "noise" is actually the signal.' },
+      { t: 'Add "use simple language" to soften the technical content for the PM', c: false, e: '"Simple language" is a blunt instrument. It may over-simplify for your engineers while still leaving the PM lost. Audience layering is more precise — it tells the skill to provide both a plain-English overview AND a technical deep-dive in the same chapter.' }
+    ]
+  },
+  {
+    q: 'Your generated tutorial fails E2E validation. The error log shows: "TypeError: Cannot read properties of null (reading \'textContent\')" — but visually, the page looks fine in Chromium. What does this tell you?',
+    opts: [
+      { t: 'The playwright MCP lost its browser connection mid-test', c: false, e: 'A lost connection would produce a connection error or timeout, not a TypeError about null properties. This error is happening inside the page\'s JavaScript — the browser is running fine.' },
+      { t: 'A JS function references an element ID that doesn\'t exist in the HTML', c: true, e: 'Correct! The Playwright MCP caught a runtime error that visual inspection missed entirely. The page rendered visually because the broken code path hadn\'t been triggered yet. This is exactly what E2E validation is for — Playwright clicks things and exercises code paths that a screenshot would never reveal.' },
+      { t: 'The Whisper model failed to transcribe the audio and produced malformed data', c: false, e: 'Whisper runs during video analysis (step 2 of the pipeline), long before HTML generation. A Whisper failure would produce empty or garbled transcript content, not a JavaScript TypeError during browser testing.' },
+      { t: 'The tutorialinator MCP is out of sync with the generated HTML', c: false, e: 'The tutorialinator MCP handles video analysis, not HTML execution. Once it finishes its analysis and hands data to Claude for generation, it\'s done. This error is happening at runtime in the browser.' }
+    ]
+  },
+  {
+    q: 'You run /tutorialinator on a topic. The tutorial generates successfully. But you notice the tutorial your colleague got last week for the same topic looks completely different. Should you be concerned?',
+    opts: [
+      { t: 'Yes — this indicates a bug. Tutorialinator should produce identical output for the same input.', c: false, e: 'Tutorialinator is intentionally non-deterministic in content generation. Claude\'s creativity varies run to run, producing different widget designs, challenge phrasings, and code examples. The design system (colors, layout, animations) is locked, but the learning content is not.' },
+      { t: 'No — Tutorialinator uses a locked design system but gives Claude creative latitude on content and widgets.', c: true, e: 'Correct! As Masud explained: the design system (CSS variables, layout structure, animation library) is prescriptive to reduce LLM cognitive load. But the actual widgets, challenges, quiz questions, and explanations are generated fresh each run. Two runs on the same topic should feel like the same series, but teach through different exercises.' },
+      { t: 'Yes — use a fixed random seed to ensure reproducibility.', c: false, e: 'There\'s no seed mechanism in Tutorialinator, and adding one would go against the design intent. The variation is a feature: it means the tool can generate multiple versions of a tutorial, and you can pick the one with the best widgets.' },
+      { t: 'No — but you should file a GitHub issue to report the inconsistency.', c: false, e: 'This is expected behavior, not a bug. Filing an issue would be misleading. The skill\'s README explicitly addresses the single-file design and creative latitude — this is by design.' }
+    ]
+  },
+  {
+    q: 'After reviewing your generated tutorial, every quiz question can be answered correctly by scanning the section directly above it — no real understanding required. Which prompt addition would most directly fix this?',
+    opts: [
+      { t: 'Add "include more sections per chapter so quizzes have more material to draw from"', c: false, e: 'More content doesn\'t improve quiz quality. The problem is the type of question, not the amount of material. A longer tutorial with the same quiz design produces more recall-only questions, not harder ones.' },
+      { t: 'Add "quiz questions must require applying the concept, not recalling it from the text above"', c: true, e: 'Correct! This directly instructs the skill\'s quiz generation. The skill already includes a Bloom\'s taxonomy check (level 3+ required), but explicit prompt guidance amplifies this. Even better: add "use Predict-and-Verify or Fix-the-Bug formats" to specify the interaction pattern.' },
+      { t: 'Add "include detailed answer explanations for each option"', c: false, e: 'Good explanations are already part of the skill\'s quiz format by default. The issue is question difficulty, not explanation quality. Adding this instruction would produce well-explained easy questions — not harder ones.' },
+      { t: 'Switch to Deep Research Mode so the quiz draws from more sources', c: false, e: 'Quiz difficulty isn\'t tied to research depth. The mode determines the source material for the tutorial content. How quizzes are designed is governed by the skill\'s pedagogical rules, not the input mode.' }
+    ]
+  }
+];
+
+var psPrompts = [
+  {
+    label: 'Prompt A',
+    text: '/tutorialinator ~/screen-recording.mp4',
+    scores: { audience: 0, context: 0, mode: 100, widgets: 0, focus: 0 },
+    verdict: 'Minimal — valid but generic. The skill will generate something reasonable, but it has no idea who\'s learning, what to emphasize, or what kind of interaction you want. Scores well only on mode clarity.'
+  },
+  {
+    label: 'Prompt B',
+    text: '/tutorialinator ~/screen-recording.mp4\n\nBuild a tutorial about our auth system for\nnew backend engineers. Include a code\nsandbox for the JWT signing step.',
+    scores: { audience: 80, context: 60, mode: 100, widgets: 70, focus: 50 },
+    verdict: 'Good — audience and a widget hint are strong additions. Context could be richer (what does the recording cover? any caveats?). Focus is implied but not explicit.'
+  },
+  {
+    label: 'Prompt C',
+    text: '/tutorialinator ~/screen-recording.mp4\n\nAudience: new backend engineers (know REST,\nnot JWT). Also accessible to security-focused\nsenior devs who want edge cases.\n\nFocus on the token signing and refresh flow.\nSkip the OAuth setup — that\'s covered elsewhere.\nInclude a Fix-the-Bug challenge for the\ncommon expiry misconfiguration.',
+    scores: { audience: 100, context: 90, mode: 100, widgets: 95, focus: 100 },
+    verdict: 'Excellent — every dimension covered. Layered audience, explicit focus boundaries, specific widget request, and a real-world challenge (the expiry bug) that maps to an actual misconception.'
+  },
+  {
+    label: 'Prompt D',
+    text: '/tutorialinator "teach me authentication"\n\nMake it simple and interactive.',
+    scores: { audience: 10, context: 10, mode: 80, widgets: 20, focus: 10 },
+    verdict: 'Vague — "simple and interactive" are non-instructions. The skill has no idea which authentication system, which audience level, or which aspect to cover. This will produce a broad, shallow tutorial.'
+  }
+];
+
+var pbData = [
+  {
+    round: 'Round 1 — Baseline',
+    prompt: '/tutorialinator ~/onboarding-video.mp4',
+    improvements: [],
+    score: 25,
+    color: 'var(--red)'
+  },
+  {
+    round: 'Round 2 — Add Audience',
+    prompt: '/tutorialinator ~/onboarding-video.mp4\n\nBuild a tutorial about our engineering onboarding.\nAudience: new junior devs who just accepted an\noffer but haven\'t started yet. They know Python\nbut not our internal tooling.',
+    improvements: [
+      'Skill now knows to explain internal tools from scratch',
+      'Quiz questions calibrated to junior level',
+      'Tone shifts from reference guide to welcoming guide'
+    ],
+    score: 65,
+    color: 'var(--amber)'
+  },
+  {
+    round: 'Round 3 — Add Context + Widget Hints',
+    prompt: '/tutorialinator ~/onboarding-video.mp4\n\nBuild a tutorial about our engineering onboarding.\nAudience: new junior devs (know Python, new to\nour tooling). Also useful for hiring managers\nwho want to understand what day-1 looks like.\n\nFocus on: local setup, first PR workflow, and\nhow to ask for help (our Slack culture).\nSkip: the legacy Jira setup (being deprecated).\n\nInclude a step-by-step sandbox for the\nfirst-commit workflow. Use a Decision Scenario\nchallenge for the "when to ask for help" section.',
+    improvements: [
+      'Dual audience layering adds depth without losing newcomers',
+      'Focus boundaries prevent diluted content',
+      'Skip instruction avoids teaching deprecated process',
+      'Specific widget requests produce targeted challenges',
+      'Decision Scenario for "ask for help" maps to real judgment calls'
+    ],
+    score: 95,
+    color: 'var(--green)'
+  }
+];
+
+var parsonsOrder = [
+  'Auto-Setup & Mode Detection',
+  'Source Analysis (Video / Research / Web)',
+  'Learning Design Phase',
+  'Pedagogical Review',
+  'Phased HTML Generation',
+  'HTML Structure Validation',
+  'Playwright E2E Validation → Open'
+];
+
+/* ============================================================
+   2. NAVIGATION
+   ============================================================ */
+function goTo(n) {
+  var chs = document.querySelectorAll('.chapter');
+  chs.forEach(function(c) { c.classList.remove('active'); c.style.display = 'none'; });
+  document.getElementById('ch' + n).classList.add('active');
+  document.getElementById('ch' + n).style.display = 'block';
+  currentCh = n;
+  window.scrollTo(0, 0);
+  var dots = document.querySelectorAll('.ch-dot');
+  dots.forEach(function(d, i) {
+    d.classList.remove('active');
+    if (i === n) d.classList.add('active');
+  });
+  buildSidebarSections();
+  if (n > 0) {
+    var prev = document.querySelector('#navChapters .ch-dot:nth-child(' + n + ')');
+    if (prev && !prev.classList.contains('done')) prev.classList.add('done');
+  }
+  initChapter(n);
+}
+
+/* ============================================================
+   3. XP + PARTICLES
+   ============================================================ */
+function awardXP(amt, msg, origin) {
+  if (interacted.has(msg)) return;
+  interacted.add(msg);
+  xp += amt;
+  var el = document.getElementById('gXpVal');
+  el.textContent = xp;
+  el.style.animation = 'none';
+  el.offsetHeight;
+  el.style.animation = 'pulse 0.4s ease';
+  if (origin) burstParticles(origin);
+  toast('+' + amt + ' XP — ' + msg);
+  var fe = document.getElementById('finalXp');
+  if (fe) fe.textContent = xp;
+}
+
+function burstParticles(originEl) {
+  var rect = originEl.getBoundingClientRect();
+  var cx = rect.left + rect.width / 2;
+  var cy = rect.top + rect.height / 2;
+  for (var i = 0; i < 10; i++) {
+    var p = document.createElement('div');
+    var angle = (i / 10) * Math.PI * 2;
+    var dist = 40 + Math.random() * 30;
+    p.style.cssText = [
+      'position:fixed', 'width:6px', 'height:6px', 'border-radius:50%',
+      'background:' + ['var(--purple)','var(--cyan)','var(--green)','var(--amber)'][i%4],
+      'left:' + cx + 'px', 'top:' + cy + 'px',
+      '--tx:' + (Math.cos(angle)*dist) + 'px',
+      '--ty:' + (Math.sin(angle)*dist) + 'px',
+      'animation:particleBurst 0.6s ease forwards',
+      'pointer-events:none', 'z-index:99998'
+    ].join(';');
+    document.body.appendChild(p);
+    setTimeout(function(el){ document.body.removeChild(el); }, 700, p);
+  }
+}
+
+/* ============================================================
+   4. TOAST
+   ============================================================ */
+function toast(txt) {
+  var t = document.getElementById('gToast');
+  var tl = document.getElementById('gToastTxt');
+  t.classList.remove('show');
+  void t.offsetWidth;
+  tl.textContent = txt;
+  t.classList.add('show');
+  clearTimeout(t._to);
+  t._to = setTimeout(function(){ t.classList.remove('show'); }, 3000);
+}
+
+/* ============================================================
+   5. MODE CHALLENGE
+   ============================================================ */
+function buildModeChallenge() {
+  renderMcScenario(0);
+}
+
+function renderMcScenario(idx) {
+  mcScenario = idx;
+  var sc = mcScenarios[idx];
+  document.getElementById('mcScenarioNum').textContent = idx + 1;
+  document.getElementById('mcScenarioTxt').textContent = sc.txt;
+  document.getElementById('mcFeedback').className = 'mc-feedback';
+  document.getElementById('mcFeedback').style.display = 'none';
+  document.getElementById('mcNext').className = 'mc-next';
+  var opts = document.getElementById('mcOptions');
+  opts.innerHTML = '';
+  sc.options.forEach(function(opt, i) {
+    var btn = document.createElement('button');
+    btn.className = 'mc-btn';
+    btn.textContent = opt;
+    btn.onclick = function() { mcAnswer(idx, i, btn); };
+    opts.appendChild(btn);
+  });
+  for (var i = 0; i < 3; i++) {
+    var pip = document.getElementById('mcPip' + i);
+    if (pip) {
+      pip.className = 'mc-pip' + (i < idx ? ' done' : (i === idx ? ' active' : ''));
+    }
+  }
+}
+
+function mcAnswer(scenarioIdx, chosenIdx, btn) {
+  var sc = mcScenarios[scenarioIdx];
+  var isCorrect = chosenIdx === sc.correct;
+  var btns = document.getElementById('mcOptions').querySelectorAll('.mc-btn');
+  btns.forEach(function(b) { b.disabled = true; });
+  btn.className = 'mc-btn ' + (isCorrect ? 'correct' : 'wrong');
+  if (!isCorrect) btns[sc.correct].className = 'mc-btn correct';
+  var fb = document.getElementById('mcFeedback');
+  fb.textContent = sc.explanations[chosenIdx];
+  fb.className = 'mc-feedback show' + (isCorrect ? '' : ' wrong-fb');
+  fb.style.display = 'block';
+  if (isCorrect) awardXP(20, 'Mode ' + (scenarioIdx+1) + ' correct', btn);
+  mcDone[scenarioIdx] = true;
+  if (scenarioIdx < 2) {
+    var nxt = document.getElementById('mcNext');
+    nxt.className = 'mc-next show';
+  } else {
+    var nxt = document.getElementById('mcNext');
+    nxt.className = 'mc-next show';
+    nxt.textContent = 'Challenge complete!';
+    nxt.onclick = function(){ nxt.style.display='none'; awardXP(10,'All scenarios complete',nxt); };
+  }
+}
+
+function mcAdvance() {
+  if (mcScenario < 2) renderMcScenario(mcScenario + 1);
+}
+
+/* ============================================================
+   6. QUIZ BUILDER
+   ============================================================ */
+function buildQuiz(containerId, dataIdx) {
+  var d = quizData[dataIdx];
+  var el = document.getElementById(containerId);
+  if (!el) return;
+  var html = '<div class="quiz-q">' + d.q + '</div><div class="quiz-options">';
+  var letters = ['A','B','C','D'];
+  d.opts.forEach(function(opt, i) {
+    html += '<div class="quiz-opt" style="animation-delay:' + (i*0.07) + 's" onclick="quizAnswer(\'' + containerId + '\',' + dataIdx + ',' + i + ',this)">';
+    html += '<span class="opt-letter">' + letters[i] + '</span>';
+    html += '<span class="opt-text">' + opt.t + '</span></div>';
+  });
+  html += '</div><div class="quiz-exp" id="' + containerId + '-exp"></div>';
+  el.innerHTML = html;
+}
+
+function quizAnswer(containerId, dataIdx, chosenIdx, el) {
+  var d = quizData[dataIdx];
+  var opts = document.querySelectorAll('#' + containerId + ' .quiz-opt');
+  opts.forEach(function(o) { o.classList.add('disabled'); o.onclick = null; });
+  var isCorrect = d.opts[chosenIdx].c;
+  el.classList.add(isCorrect ? 'correct' : 'wrong');
+  if (!isCorrect) {
+    d.opts.forEach(function(opt, i) {
+      if (opt.c) opts[i].classList.add('correct');
+    });
+  }
+  var exp = document.getElementById(containerId + '-exp');
+  exp.innerHTML = '<strong>' + (isCorrect ? 'Correct.' : 'Not quite.') + '</strong> ' + d.opts[chosenIdx].e;
+  exp.className = 'quiz-exp show';
+  if (isCorrect) awardXP(20, 'Quiz ' + (dataIdx+1) + ' correct', el);
+}
+
+/* ============================================================
+   7. PIPELINE STEPPER
+   ============================================================ */
+function pipeSelect(idx) {
+  var steps = document.querySelectorAll('.pipe-step');
+  steps.forEach(function(s, i) {
+    s.className = 'pipe-step' + (i < idx ? ' done' : (i === idx ? ' active' : ''));
+  });
+  pipeStep = idx;
+  awardXP(5, 'pipeline-step-' + idx, document.getElementById('pd' + idx));
+}
+
+function pipeNext() {
+  var next = pipeStep + 1;
+  if (next > 6) next = 0;
+  pipeSelect(next);
+}
+
+function pipeReset() {
+  pipeStep = -1;
+  var steps = document.querySelectorAll('.pipe-step');
+  steps.forEach(function(s) { s.className = 'pipe-step'; });
+}
+
+/* ============================================================
+   8. MCP DIAGNOSTIC
+   ============================================================ */
+function diagCheck(symptomIdx, choice) {
+  var correct = symptomIdx === 0 ? 'a' : 'b';
+  var isCorrect = choice === correct;
+  var aEl = document.getElementById('diagA' + symptomIdx);
+  var bEl = document.getElementById('diagB' + symptomIdx);
+  [aEl, bEl].forEach(function(e) { if(e) { e.onclick = null; e.style.cursor = 'default'; }});
+  (choice === 'a' ? aEl : bEl).classList.add(isCorrect ? 'correct' : 'wrong');
+  (choice === 'a' ? aEl : bEl).classList.add(isCorrect ? 'correct' : 'wrong'); if (!isCorrect) { (choice === 'a' ? bEl : aEl).classList.add('correct'); }
+  var msgs = [
+    {
+      a: 'Correct! The tutorialinator MCP handles video analysis. Empty transcript = Whisper didn\'t run or failed. Check whether the MCP is registered in Claude Code settings (run auto-setup.sh again if unsure) and whether the video file path was quoted properly.',
+      b: 'Not quite. The playwright MCP tests the final HTML in a browser. It runs after generation. If the tutorial\'s content is generic/empty, the problem happened much earlier — during video analysis. Check the tutorialinator MCP.'
+    },
+    {
+      a: 'Not quite. The tutorialinator MCP analyzes video files — its job ends when it hands the transcript and frames to Claude. A JavaScript TypeError in the browser is a rendering/runtime issue that happens after HTML generation.',
+      b: 'Correct! The playwright MCP caught a JavaScript runtime error during E2E testing. This is exactly what it\'s for — running the tutorial in a real browser and exercising code paths. The error means a JS function tried to access an element ID that doesn\'t exist in the HTML. The skill will attempt to fix this and re-validate.'
+    }
+  ];
+  var fb = document.getElementById('diagFb' + symptomIdx);
+  fb.textContent = msgs[symptomIdx][choice];
+  fb.className = 'mcp-feedback show';
+  if (isCorrect) awardXP(15, 'mcp-diag-' + symptomIdx, document.getElementById('diagA' + symptomIdx));
+  diagDone[symptomIdx] = true;
+  if (symptomIdx === 0) {
+    setTimeout(function() {
+      var s1 = document.getElementById('diagSection1');
+      if (s1) { s1.style.opacity = '1'; s1.style.pointerEvents = 'auto'; }
+    }, 600);
+  }
+}
+
+/* ============================================================
+   9. PARSONS PROBLEM
+   ============================================================ */
+function buildParsons() {
+  var shuffled = parsonsOrder.slice().sort(function() { return Math.random() - 0.5; });
+  var bank = document.getElementById('parsonsBank');
+  var target = document.getElementById('parsonsTarget');
+  if (!bank || !target) return;
+  bank.innerHTML = '';
+  target.innerHTML = '';
+  shuffled.forEach(function(step, i) {
+    var item = document.createElement('div');
+    item.className = 'parsons-item';
+    item.draggable = true;
+    item.dataset.step = step;
+    item.innerHTML = '<span class="drag-handle">⠿</span><span class="step-num"></span>' + step;
+    item.addEventListener('dragstart', function(e) {
+      e.dataTransfer.setData('text/plain', step);
+      item.classList.add('dragging');
+    });
+    item.addEventListener('dragend', function() { item.classList.remove('dragging'); });
+    bank.appendChild(item);
+  });
+  [bank, target].forEach(function(zone) {
+    zone.addEventListener('dragover', function(e) {
+      e.preventDefault();
+      var dragging = document.querySelector('.parsons-item.dragging');
+      var after = getDragAfter(zone, e.clientY);
+      if (after == null) zone.appendChild(dragging);
+      else zone.insertBefore(dragging, after);
+    });
+  });
+}
+
+function getDragAfter(container, y) {
+  var items = Array.from(container.querySelectorAll('.parsons-item:not(.dragging)'));
+  return items.reduce(function(closest, child) {
+    var box = child.getBoundingClientRect();
+    var offset = y - box.top - box.height / 2;
+    if (offset < 0 && offset > closest.offset) return { offset: offset, element: child };
+    return closest;
+  }, { offset: Number.NEGATIVE_INFINITY }).element;
+}
+
+function checkParsons() {
+  var target = document.getElementById('parsonsTarget');
+  if (!target) return;
+  var items = target.querySelectorAll('.parsons-item');
+  var result = document.getElementById('parsonsResult');
+  if (items.length < parsonsOrder.length) {
+    result.className = 'parsons-result show fail';
+    result.textContent = 'Move all steps into the target area first, then check.';
+    return;
+  }
+  var userOrder = Array.from(items).map(function(i) { return i.dataset.step; });
+  var correct = JSON.stringify(userOrder) === JSON.stringify(parsonsOrder);
+  if (correct) {
+    result.className = 'parsons-result show pass';
+    result.textContent = 'Correct order! Each step creates the inputs that the next step needs — the pipeline flows in exactly this sequence.';
+    awardXP(25, 'parsons-correct', result);
+    parsonsCorrect = true;
+  } else {
+    var firstWrong = -1;
+    userOrder.forEach(function(s, i) { if (firstWrong < 0 && s !== parsonsOrder[i]) firstWrong = i; });
+    result.className = 'parsons-result show fail';
+    result.textContent = 'Not quite. Step ' + (firstWrong+1) + ' is out of place. Think about what each step needs as input from the previous one.';
+  }
+}
+
+/* ============================================================
+   10. CURL ANNOTATE
+   ============================================================ */
+function curlClick(key) {
+  var data = curlData[key];
+  if (!data) return;
+  var ex = document.getElementById('curlExplain');
+  ex.innerHTML = '<div class="ce-flag">' + data.flag + ' — ' + data.name + '</div>' + data.desc;
+  ex.className = 'curl-explain show';
+  document.querySelectorAll('.curl-seg').forEach(function(s) { s.classList.remove('active'); });
+  var seg = document.getElementById('cs-' + key);
+  if (seg) seg.classList.add('active');
+  var chip = document.getElementById('cc-' + key);
+  if (chip) chip.classList.add('active');
+  curlDone.add(key);
+  if (curlDone.size >= 6) {
+    document.querySelectorAll('.curl-chip').forEach(function(c) { c.classList.add('done'); });
+    awardXP(20, 'curl-annotate-complete', ex);
+  } else {
+    awardXP(3, 'curl-' + key, chip || ex);
+  }
+}
+
+/* ============================================================
+   11. TERMINAL TABS
+   ============================================================ */
+function termTab(idx) {
+  activeTermTab = idx;
+  document.querySelectorAll('.term-tab').forEach(function(t, i) {
+    t.className = 'term-tab' + (i === idx ? ' active' : '');
+  });
+  var body = document.getElementById('termBody');
+  if (!body) return;
+  var lines = termTabs[idx];
+  body.innerHTML = lines.map(function(l) {
+    if (l.startsWith('#')) return '<span class="term-line"><span class="term-comment">' + l + '</span></span>';
+    if (l.startsWith('/tutorial')) return '<span class="term-line"><span class="term-highlight">' + l + '</span></span>';
+    if (l === '') return '<span class="term-line">&nbsp;</span>';
+    return '<span class="term-line"><span class="term-output">' + l + '</span></span>';
+  }).join('');
+  awardXP(5, 'term-tab-' + idx, body);
+}
+
+/* ============================================================
+   12. FIX INVOCATION
+   ============================================================ */
+function fixToggle(idx) {
+  var data = fixData[idx];
+  var issueEl = document.getElementById('fi' + idx);
+  var segEl = document.getElementById('fix' + idx);
+  issueEl.innerHTML = '<strong style="color:var(--amber)">' + data.issue + '</strong><br>' + data.explanation + '<br><span style="color:var(--green);font-family:var(--mono);font-size:12px">Fix: ' + data.fix + '</span>';
+  if (segEl) segEl.classList.add('fixed');
+  fixClicked[idx] = true;
+  awardXP(10, 'fix-issue-' + idx, segEl || issueEl);
+  if (fixClicked[0] && fixClicked[1] && fixClicked[2]) {
+    awardXP(15, 'fix-all-found', issueEl);
+    toast('All 3 issues found! +15 XP');
+  }
+}
+
+/* ============================================================
+   13. SANDBOX
+   ============================================================ */
+var sbDefaults = [
+  ['# Describe your knowledge source:', '# e.g. "20-minute screen recording of our deploy workflow"', '', '# Audience:', '# e.g. "Junior devs who know Python but not our tooling"', '', '# What to include/focus on:', '# e.g. "Focus on the authentication section"', '', '# What to skip:', '# e.g. "Ignore the legacy Jira setup at the end"'].join('\n')
+];
+
+function runSB(i) {
+  var code = document.getElementById('sbCode' + i);
+  var out = document.getElementById('sbOut' + i);
+  var btn = document.querySelector('.sb-btn-run');
+  if (!code || !out) return;
+  var val = code.value.trim();
+  if (!val) val = '(empty — add some context above)';
+  var lines = val.split('\n').filter(function(l){ return l.trim() && !l.trim().startsWith('#'); });
+  var invocation = '/tutorialinator ~/your-video.mp4\n\n' + lines.join('\n');
+  btn.style.background = 'linear-gradient(90deg,rgba(139,92,246,0.3),rgba(0,212,255,0.2),rgba(139,92,246,0.3))';
+  btn.style.backgroundSize = '200% 100%';
+  btn.style.animation = 'shimmer 1s linear';
+  setTimeout(function() {
+    btn.style.animation = '';
+    btn.style.background = '';
+  }, 800);
+  var html = [
+    '<!DOCTYPE html><html><head><style>',
+    'body{background:#0a0a0a;color:#e2e8f0;font-family:\'JetBrains Mono\',monospace;font-size:13px;padding:16px;line-height:1.8}',
+    '.prompt{color:#28c840}.comment{color:#4a7a4a}.inv{color:#00d4ff}',
+    '</style></head><body>',
+    '<div class="comment"># Your /tutorialinator invocation:</div><br>',
+    '<pre class="inv">' + invocation.replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</pre>',
+    '</body></html>'
+  ].join('');
+  out.srcdoc = html;
+  updGutter(i);
+  awardXP(15, 'sandbox-run', btn);
+}
+
+function resetSB(i) {
+  var code = document.getElementById('sbCode' + i);
+  if (code) code.value = sbDefaults[i] || '';
+  var out = document.getElementById('sbOut' + i);
+  if (out) out.srcdoc = '';
+  updGutter(i);
+}
+
+function updGutter(i) {
+  var code = document.getElementById('sbCode' + i);
+  var gutter = document.getElementById('sbGutter' + i);
+  if (!code || !gutter) return;
+  var lines = code.value.split('\n').length;
+  var nums = [];
+  for (var n = 1; n <= Math.max(lines, 8); n++) nums.push(n);
+  gutter.textContent = nums.join('\n');
+}
+
+/* ============================================================
+   14. PROMPT SCORER
+   ============================================================ */
+function buildPromptScorer() {
+  var container = document.getElementById('psPrompts');
+  if (!container) return;
+  container.innerHTML = '';
+  psPrompts.forEach(function(p, i) {
+    var el = document.createElement('div');
+    el.className = 'ps-prompt';
+    el.innerHTML = '<div class="ps-prompt-label">' + p.label + '</div><div class="ps-prompt-text">' + p.text.replace(/\n/g,'<br>') + '</div>';
+    el.onclick = function() {
+      document.querySelectorAll('.ps-prompt').forEach(function(pe) { pe.classList.remove('selected'); });
+      el.classList.add('selected');
+      showPromptScores(i);
+    };
+    container.appendChild(el);
+  });
+}
+
+function showPromptScores(idx) {
+  var p = psPrompts[idx];
+  var crit = document.getElementById('psCriteria');
+  if (!crit) return;
+  crit.style.display = 'grid';
+  var names = { audience: 'Audience clarity', context: 'Source context', mode: 'Mode clarity', widgets: 'Widget specificity', focus: 'Topic focus' };
+  var colors = { audience: 'var(--purple)', context: 'var(--cyan)', mode: 'var(--green)', widgets: 'var(--amber)', focus: 'var(--t2)' };
+  crit.innerHTML = Object.keys(names).map(function(k) {
+    var score = p.scores[k];
+    return '<div class="ps-crit"><div class="ps-crit-name">' + names[k] + '</div>' +
+      '<div class="ps-bar-track"><div class="ps-bar-fill" style="width:0%;background:' + colors[k] + '" data-target="' + score + '"></div></div>' +
+      '<div class="ps-score-txt">' + score + '/100 — ' + (score >= 80 ? 'strong' : score >= 40 ? 'partial' : 'missing') + '</div>' +
+      '</div>';
+  }).join('') + '<div class="ps-crit" style="grid-column:1/-1;border-color:var(--border-h)"><div style="font-size:13px;color:var(--t2);line-height:1.6">' + p.verdict + '</div></div>';
+  requestAnimationFrame(function() {
+    crit.querySelectorAll('.ps-bar-fill').forEach(function(bar) {
+      var target = parseInt(bar.dataset.target);
+      setTimeout(function() { bar.style.width = target + '%'; }, 50);
+    });
+  });
+  awardXP(10, 'ps-select-' + idx, crit);
+}
+
+/* ============================================================
+   15. PROGRESSIVE BUILD
+   ============================================================ */
+function buildPB() {
+  pbSelect(0);
+}
+
+function pbSelect(idx) {
+  if (idx >= pbUnlocked) return;
+  pbRound = idx;
+  var rounds = document.querySelectorAll('.pb-round');
+  rounds.forEach(function(r, i) {
+    r.className = 'pb-round' + (i < pbUnlocked ? ' unlocked' : ' locked') + (i === idx ? ' active' : '');
+  });
+  var data = pbData[idx];
+  document.getElementById('pbPromptText').textContent = data.prompt;
+  document.getElementById('pbScoreLabel').textContent = data.score + ' / 100';
+  var fill = document.getElementById('pbScoreFill');
+  fill.style.width = data.score + '%';
+  fill.style.background = data.color;
+  var impr = document.getElementById('pbImprovements');
+  impr.innerHTML = data.improvements.map(function(imp, i) {
+    return '<div class="pb-impr" style="animation-delay:' + (i*0.1) + 's">' + imp + '</div>';
+  }).join('');
+  var btn = document.getElementById('pbNextBtn');
+  if (btn) btn.style.display = pbUnlocked >= 3 ? 'none' : 'inline-flex';
+}
+
+function pbNext() {
+  if (pbUnlocked < 3) {
+    pbUnlocked++;
+    awardXP(15, 'pb-round-' + pbUnlocked, document.getElementById('pbNextBtn'));
+    pbSelect(pbUnlocked - 1);
+    var rounds = document.querySelectorAll('.pb-round');
+    rounds.forEach(function(r, i) {
+      r.className = 'pb-round' + (i < pbUnlocked ? ' unlocked' : ' locked') + (i === pbUnlocked-1 ? ' active' : '');
+    });
+  }
+}
+
+/* ============================================================
+   16. SKILL EXPLORER
+   ============================================================ */
+function skillCheck(choice) {
+  var btns = document.querySelectorAll('#skillOptions .mc-btn');
+  btns.forEach(function(b) { b.disabled = true; b.onclick = null; });
+  var isCorrect = choice === 'b';
+  btns[{a:0,b:1,c:2,d:3}[choice]].className = 'mc-btn ' + (isCorrect ? 'correct' : 'wrong');
+  if (!isCorrect) btns[1].className = 'mc-btn correct';
+  var fb = document.getElementById('skillFeedback');
+  var messages = {
+    a: 'The Widget Design Principles say "challenge-first" for overall widget design. But the specific rule preventing recall-only quizzes is in the Quiz Questions section — Bloom\'s taxonomy level 3+ (application, analysis, evaluation).',
+    b: 'Correct! The Quiz Questions section of SKILL.md explicitly requires Bloom\'s level 3+: questions must require application, analysis, or evaluation — never pure recall or recognition. It even gives examples of "weak" vs "strong" question patterns.',
+    c: 'The Pedagogical Review Agent does check for recall-only assessments (Criterion 1). But this is a secondary enforcement mechanism. The primary rule that governs quiz design is in the Quiz Questions section of the Content Generation Standards.',
+    d: 'The XP Award Schedule defines point values for different actions. It doesn\'t govern quiz question quality or the recall vs application distinction.'
+  };
+  fb.textContent = messages[choice];
+  fb.className = 'mc-feedback show' + (isCorrect ? '' : ' wrong-fb');
+  fb.style.display = 'block';
+  if (isCorrect) { skillDone = true; awardXP(20, 'skill-explorer-correct', fb); }
+}
+
+/* ============================================================
+   17. SCROLL REVEAL
+   ============================================================ */
+function setupReveal() {
+  var obs = new IntersectionObserver(function(entries) {
+    entries.forEach(function(e) { if (e.isIntersecting) e.target.classList.add('vis'); });
+  }, { threshold: 0.08 });
+  document.querySelectorAll('.sect').forEach(function(s) { obs.observe(s); });
+}
+
+function updScrollProgress() {
+  var el = document.getElementById('scrollProgress');
+  if (!el) return;
+  var total = document.documentElement.scrollHeight - window.innerHeight;
+  var pct = total > 0 ? (window.scrollY / total) * 100 : 0;
+  el.style.height = pct + '%';
+}
+
+function buildSidebarSections() {
+  var ch = document.getElementById('ch' + currentCh);
+  if (!ch) return;
+  var sects = ch.querySelectorAll('section.sect[id]');
+  var container = document.getElementById('sidebarSections');
+  if (!container) return;
+  container.innerHTML = '';
+  sects.forEach(function(s) {
+    var dot = document.createElement('div');
+    dot.className = 's-dot';
+    dot.title = s.querySelector('h2') ? s.querySelector('h2').textContent.trim().substring(0,30) : '';
+    dot.onclick = function() { s.scrollIntoView({ behavior:'smooth', block:'start' }); };
+    container.appendChild(dot);
+  });
+}
+
+function updSidebarOnScroll() {
+  var ch = document.getElementById('ch' + currentCh);
+  if (!ch) return;
+  var sects = ch.querySelectorAll('section.sect[id]');
+  var dots = document.querySelectorAll('.s-dot');
+  var scrollMid = window.scrollY + window.innerHeight / 2;
+  sects.forEach(function(s, i) {
+    var rect = s.getBoundingClientRect();
+    var top = rect.top + window.scrollY;
+    var bot = top + rect.height;
+    if (dots[i]) {
+      dots[i].classList.remove('active');
+      if (scrollMid >= top && scrollMid < bot) dots[i].classList.add('active');
+      else if (window.scrollY > top) dots[i].classList.add('visited');
+    }
+  });
+}
+
+/* ============================================================
+   18. HERO TEXT REVEAL
+   ============================================================ */
+function heroTextReveal(heroEl) {
+  var h1 = heroEl.querySelector('.hero-title');
+  if (!h1) return;
+  var html = h1.innerHTML;
+  var result = '';
+  var delay = 0;
+  var i = 0;
+  while (i < html.length) {
+    var c = html[i];
+    if (c === '<') {
+      var end = html.indexOf('>', i);
+      result += html.substring(i, end + 1);
+      i = end + 1;
+    } else if (c === '&') {
+      var semi = html.indexOf(';', i);
+      if (semi > i && semi - i <= 8) {
+        var entity = html.substring(i, semi + 1);
+        result += '<span class="char" style="animation-delay:' + delay.toFixed(3) + 's">' + entity + '</span>';
+        delay += 0.025;
+        i = semi + 1;
+      } else {
+        result += '<span class="char" style="animation-delay:' + delay.toFixed(3) + 's">' + c + '</span>';
+        delay += 0.025;
+        i++;
+      }
+    } else if (c === ' ' || c === '\n') {
+      result += c;
+      i++;
+    } else {
+      result += '<span class="char" style="animation-delay:' + delay.toFixed(3) + 's">' + c + '</span>';
+      delay += 0.025;
+      i++;
+    }
+  }
+  h1.innerHTML = result;
+}
+
+/* ============================================================
+   19. 3D CARD TILT
+   ============================================================ */
+function initCardTilt() {
+  document.querySelectorAll('.card').forEach(function(card) {
+    card.addEventListener('mousemove', function(e) {
+      var rect = card.getBoundingClientRect();
+      var x = (e.clientX - rect.left) / rect.width - 0.5;
+      var y = (e.clientY - rect.top) / rect.height - 0.5;
+      card.style.transform = 'perspective(800px) rotateY(' + (x*4) + 'deg) rotateX(' + (-y*4) + 'deg)';
+    });
+    card.addEventListener('mouseleave', function() { card.style.transform = ''; });
+  });
+}
+
+/* ============================================================
+   20. CURSOR GLOW
+   ============================================================ */
+(function() {
+  var glow = document.getElementById('cursorGlow');
+  var mx = 0, my = 0, gx = 0, gy = 0;
+  document.addEventListener('mousemove', function(e) { mx = e.clientX; my = e.clientY; });
+  function animate() {
+    gx += (mx - gx) * 0.12;
+    gy += (my - gy) * 0.12;
+    glow.style.left = gx + 'px';
+    glow.style.top = gy + 'px';
+    requestAnimationFrame(animate);
+  }
+  animate();
+})();
+
+/* ============================================================
+   21. IMAGE INIT (base64 from video frames)
+   ============================================================ */
+
+/* ============================================================
+   22. KEYBOARD SHORTCUTS
+   ============================================================ */
+document.addEventListener('keydown', function(e) {
+  if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+    e.preventDefault();
+    runSB(0);
+  }
+  if (e.key === 'ArrowRight' && !e.metaKey && !e.ctrlKey) {
+    var active = document.activeElement;
+    if (active && (active.tagName === 'TEXTAREA' || active.tagName === 'INPUT')) return;
+    if (currentCh < 4) goTo(currentCh + 1);
+  }
+  if (e.key === 'ArrowLeft' && !e.metaKey && !e.ctrlKey) {
+    var active = document.activeElement;
+    if (active && (active.tagName === 'TEXTAREA' || active.tagName === 'INPUT')) return;
+    if (currentCh > 0) goTo(currentCh - 1);
+  }
+});
+
+/* ============================================================
+   23. COPY PROMPT (Blog chapter)
+   ============================================================ */
+function copyPrompt(btn) {
+  var block = btn.parentElement;
+  var full = block.textContent;
+  // Strip "Copy" button text and the "Label:" prefix
+  var text = full.replace('Copy', '').replace(/^[^:]+:\s*/, '').trim();
+  navigator.clipboard.writeText(text).then(function() {
+    btn.textContent = 'Copied';
+    btn.classList.add('copied');
+    setTimeout(function() { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 2000);
+  });
+}
+
+/* ============================================================
+   25. INIT PER CHAPTER
+   ============================================================ */
+function initChapter(n) {
+  if (n === 0) {
+    buildModeChallenge();
+    buildQuiz('quiz0', 0);
+    heroTextReveal(document.querySelector('#ch0 .hero'));
+  }
+  if (n === 1) {
+    if (pipeStep < 0) pipeSelect(0);
+    buildParsons();
+    buildQuiz('quiz1', 1);
+    heroTextReveal(document.querySelector('#ch1 .hero'));
+  }
+  if (n === 2) {
+    termTab(0);
+    resetSB(0);
+    buildQuiz('quiz2', 2);
+    heroTextReveal(document.querySelector('#ch2 .hero'));
+  }
+  if (n === 3) {
+    buildPromptScorer();
+    buildPB();
+    buildQuiz('quiz3', 3);
+    heroTextReveal(document.querySelector('#ch3 .hero'));
+  }
+  if (n === 4) {
+    heroTextReveal(document.querySelector('#ch4 .hero'));
+  }
+  initCardTilt();
+  buildSidebarSections();
+}
+
+/* ============================================================
+   26. GLOBAL INIT
+   ============================================================ */
+window.addEventListener('scroll', function() {
+  updScrollProgress();
+  updSidebarOnScroll();
+});
+
+document.addEventListener('DOMContentLoaded', function() {
+  setupReveal();
+  initChapter(0);
+  toast('Welcome — use arrow keys or sidebar to navigate');
+});
+</script>
+</body>
+</html>

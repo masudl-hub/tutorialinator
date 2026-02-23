@@ -1,0 +1,1937 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MCP — The AI Integration Protocol</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    /* 1. Reset & CSS Variables */
+    *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+    :root {
+      --bg: #000; --s1: #060606; --s2: #0a0a0a; --s3: #111; --s4: #1a1a1a;
+      --border: #1e1e1e; --border-h: #333; --border-a: #fff;
+      --t1: #fff; --t2: #b0b0b0; --t3: #666; --t4: #444;
+      --blue: #3b82f6; --purple: #8b5cf6; --green: #22c55e;
+      --cyan: #00d4ff; --orange: #f97316; --yellow: #ffd60a;
+      --mono: 'JetBrains Mono', monospace;
+      --sans: 'Inter', -apple-system, sans-serif;
+      --ease: cubic-bezier(0.22, 1, 0.36, 1);
+      --ease-back: cubic-bezier(0.34, 1.56, 0.64, 1);
+      --ease-spring: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      --glass-bg: rgba(255,255,255,0.04);
+      --glass-border: rgba(255,255,255,0.06);
+      --glass-blur: 24px;
+      --shadow-card: 0 1px 2px rgba(0,0,0,0.5), 0 4px 12px rgba(0,0,0,0.4), 0 16px 48px rgba(0,0,0,0.3);
+      --shadow-card-hover: 0 2px 4px rgba(0,0,0,0.5), 0 8px 24px rgba(0,0,0,0.5), 0 24px 64px rgba(0,0,0,0.4);
+      --glow-inner: inset 0 1px 0 rgba(255,255,255,0.06);
+    }
+
+    /* 2. Base Typography & Body */
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: var(--sans); background: var(--bg); color: var(--t1);
+      line-height: 1.7; -webkit-font-smoothing: antialiased;
+      font-feature-settings: 'ss01'; overflow-x: hidden;
+    }
+    a { color: var(--cyan); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    code {
+      font-family: var(--mono); font-size: 0.9em; background: var(--s3);
+      padding: 2px 7px; border-radius: 4px; color: var(--cyan);
+    }
+    strong { color: var(--t1); font-weight: 600; }
+    em { font-style: italic; color: var(--t3); }
+
+    /* 3. Noise Overlay */
+    body::after {
+      content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 99999;
+      opacity: 0.028;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+      background-size: 200px 200px;
+    }
+
+    /* 4. Glass Helper */
+    .glass {
+      background: var(--glass-bg);
+      backdrop-filter: blur(var(--glass-blur));
+      -webkit-backdrop-filter: blur(var(--glass-blur));
+      border: 1px solid var(--glass-border);
+    }
+
+    /* 5. Keyframe Animations */
+    @keyframes fadeUp { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
+    @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+    @keyframes slideInRight { from { opacity:0; transform:translateX(40px); } to { opacity:1; transform:translateX(0); } }
+    @keyframes slideInLeft { from { opacity:0; transform:translateX(-20px); } to { opacity:1; transform:translateX(0); } }
+    @keyframes scaleIn { from { opacity:0; transform:scale(0.9); } to { opacity:1; transform:scale(1); } }
+    @keyframes charReveal { from { opacity:0; transform:translateY(40px) rotateX(-40deg); } to { opacity:1; transform:translateY(0) rotateX(0); } }
+    @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.5; } }
+    @keyframes shimmer { 0% { background-position:-200% 0; } 100% { background-position:200% 0; } }
+    @keyframes shake { 0%,100% { transform:translateX(0); } 15%,45%,75% { transform:translateX(-4px); } 30%,60%,90% { transform:translateX(4px); } }
+    @keyframes confettiBurst { 0% { opacity:1; transform:translate(0,0) scale(1); } 100% { opacity:0; transform:translate(var(--tx),var(--ty)) scale(0); } }
+    @keyframes timerArc { from { stroke-dashoffset:0; } to { stroke-dashoffset:62.83; } }
+    @keyframes particleBurst { 0% { opacity:1; transform:translate(0,0) scale(1); } 100% { opacity:0; transform:translate(var(--tx),var(--ty)) scale(0.3); } }
+    @keyframes borderPulse { 0%,100% { border-color:var(--border-a); box-shadow:0 0 0 0 rgba(255,255,255,0.2); } 50% { border-color:var(--border-a); box-shadow:0 0 0 4px rgba(255,255,255,0.06); } }
+    @keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+    @keyframes glowPulse { 0%,100% { box-shadow: 0 0 8px rgba(59,130,246,0.3); } 50% { box-shadow: 0 0 20px rgba(59,130,246,0.6); } }
+
+    /* 6. Scroll Progress */
+    .scroll-progress {
+      position: fixed; top: 0; right: 0; width: 2px; height: 0%;
+      background: var(--t1); z-index: 9998; transition: height 0.1s linear;
+    }
+
+    /* 7. Toast Notifications */
+    .g-toast {
+      position: fixed; bottom: 32px; right: 32px; z-index: 9997;
+      display: flex; align-items: center; gap: 10px;
+      padding: 12px 18px; border-radius: 12px;
+      background: rgba(20,20,20,0.92); backdrop-filter: blur(20px);
+      border: 1px solid var(--border-h); box-shadow: var(--shadow-card);
+      font-size: 14px; font-family: var(--mono); color: var(--t2);
+      transform: translateX(120%); transition: transform 0.4s var(--ease-back);
+    }
+    .g-toast.show { transform: translateX(0); }
+    .g-toast-icon { width: 18px; height: 18px; color: var(--green); }
+    .g-toast-timer { width: 18px; height: 18px; transform: rotate(-90deg); flex-shrink: 0; }
+    .g-toast-timer circle { fill: none; stroke: var(--t4); stroke-width: 2; }
+    .g-toast-timer .timer-fill {
+      fill: none; stroke: var(--t2); stroke-width: 2;
+      stroke-dasharray: 50.27; stroke-dashoffset: 0;
+    }
+    .g-toast.show .timer-fill { animation: timerArc 2.8s linear forwards; }
+
+    /* 8. Floating Sidebar Navigation */
+    .sidebar {
+      position: fixed; left: 20px; top: 50%; transform: translateY(-50%);
+      z-index: 9996; display: flex; flex-direction: column; align-items: center; gap: 12px;
+      padding: 16px 10px; border-radius: 16px;
+      background: rgba(10,10,10,0.85); backdrop-filter: blur(24px);
+      border: 1px solid var(--glass-border);
+    }
+    .sidebar-brand {
+      font-family: var(--mono); font-size: 10px; font-weight: 700;
+      color: var(--t3); letter-spacing: 2px; text-transform: uppercase;
+      writing-mode: vertical-lr; text-orientation: mixed; transform: rotate(180deg);
+      margin-bottom: 4px;
+    }
+    .sidebar-chapters { display: flex; flex-direction: column; gap: 6px; }
+    .sidebar-dot {
+      width: 32px; height: 32px; border-radius: 50%; border: 1.5px solid var(--border);
+      background: transparent; color: var(--t4); font-family: var(--mono); font-size: 12px;
+      display: flex; align-items: center; justify-content: center; cursor: pointer;
+      transition: all 0.3s var(--ease);
+    }
+    .sidebar-dot:hover { border-color: var(--border-h); color: var(--t2); }
+    .sidebar-dot.active { border-color: var(--t1); color: var(--t1); background: rgba(255,255,255,0.08); }
+    .sidebar-dot.done { border-color: var(--green); color: var(--green); }
+    .sidebar-divider { width: 16px; height: 1px; background: var(--border); }
+    .sidebar-sections { display: flex; flex-direction: column; gap: 5px; align-items: center; }
+    .sidebar-sec-dot {
+      width: 6px; height: 6px; border-radius: 50%; background: var(--t4);
+      transition: all 0.3s var(--ease); cursor: pointer;
+    }
+    .sidebar-sec-dot:hover { background: var(--t3); }
+    .sidebar-sec-dot.active { background: var(--t1); transform: scale(1.4); }
+    .sidebar-sec-dot.visited { background: var(--t2); }
+    .sidebar-xp {
+      display: flex; align-items: center; gap: 6px;
+      font-family: var(--mono); font-size: 12px; color: var(--green);
+    }
+    .sidebar-xp-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); }
+
+    /* 9. Chapter Container */
+    .chapter { display: none; min-height: 100vh; }
+    .chapter.active { display: block; animation: fadeIn 0.5s var(--ease); }
+
+    /* 10. Hero */
+    .hero {
+      min-height: 100vh; display: flex; flex-direction: column;
+      justify-content: center; align-items: center; text-align: center;
+      padding: 60px 10vw; position: relative;
+    }
+    .hero-eyebrow {
+      font-family: var(--mono); font-size: 13px; font-weight: 600;
+      color: var(--t3); letter-spacing: 4px; text-transform: uppercase;
+      margin-bottom: 24px; opacity: 0; animation: fadeUp 0.6s var(--ease) 0.2s forwards;
+    }
+    .hero-title {
+      font-size: clamp(52px, 10vw, 120px); font-weight: 900;
+      letter-spacing: -3px; line-height: 1.05; margin-bottom: 24px;
+      perspective: 600px;
+    }
+    .hero-title .char {
+      display: inline-block; opacity: 0;
+      animation: charReveal 0.5s var(--ease-back) forwards;
+    }
+    .hero-title em { color: var(--t3); font-style: normal; }
+    .hero-desc {
+      font-size: 18px; color: var(--t2); max-width: 540px; line-height: 1.6;
+      opacity: 0; animation: fadeUp 0.6s var(--ease) 0.8s forwards;
+    }
+    .hero-chips {
+      display: flex; gap: 12px; margin-top: 32px; flex-wrap: wrap; justify-content: center;
+      opacity: 0; animation: fadeUp 0.6s var(--ease) 1s forwards;
+    }
+    .hero-chip {
+      display: flex; align-items: center; gap: 8px;
+      padding: 8px 16px; border-radius: 100px;
+      background: var(--glass-bg); border: 1px solid var(--glass-border);
+      font-family: var(--mono); font-size: 13px; color: var(--t2);
+    }
+    .hero-chip-icon {
+      width: 8px; height: 8px; border-radius: 50%;
+    }
+    .hero-chip-icon.blue { background: var(--blue); }
+    .hero-chip-icon.green { background: var(--green); }
+    .hero-chip-icon.purple { background: var(--purple); }
+    .hero-chip-icon.orange { background: var(--orange); }
+
+    /* 11. Sections & Tags */
+    .sect {
+      padding: 80px 10vw; max-width: 1100px; margin: 0 auto;
+      opacity: 0; transform: translateY(20px);
+      transition: opacity 0.6s var(--ease), transform 0.6s var(--ease);
+    }
+    .sect.vis { opacity: 1; transform: translateY(0); }
+    .sect-tag {
+      font-family: var(--mono); font-size: 12px; font-weight: 600;
+      color: var(--blue); letter-spacing: 2px; text-transform: uppercase;
+      padding-left: 16px; border-left: 2px solid var(--blue); margin-bottom: 20px;
+    }
+    .sect h2 {
+      font-size: 42px; font-weight: 800; letter-spacing: -2px;
+      line-height: 1.15; margin-bottom: 20px;
+    }
+    .sect h2 .accent { color: var(--blue); }
+    .sect h2 .accent-purple { color: var(--purple); }
+    .sect h2 .accent-green { color: var(--green); }
+    p.body {
+      font-size: 17px; color: var(--t2); max-width: 620px; line-height: 1.8;
+      margin-bottom: 16px;
+    }
+    .div { height: 1px; background: linear-gradient(90deg, transparent, var(--border), transparent); margin: 0 10vw; }
+
+    /* 12. Cards */
+    .card {
+      background: var(--s2); border: 1px solid var(--border); border-radius: 16px;
+      padding: 28px; margin-top: 28px; box-shadow: var(--shadow-card);
+      transition: border-color 0.3s var(--ease), box-shadow 0.3s var(--ease), transform 0.1s linear;
+      box-shadow: var(--shadow-card), var(--glow-inner);
+    }
+    .card:hover { border-color: var(--border-h); box-shadow: var(--shadow-card-hover), var(--glow-inner); }
+
+    /* 13. Bento Grids */
+    .bento {
+      display: grid; gap: 16px; margin-top: 28px;
+    }
+    .bento-3 { grid-template-columns: repeat(3, 1fr); }
+    .bento-2 { grid-template-columns: repeat(2, 1fr); }
+    .bento-item {
+      background: var(--s2); border: 1px solid var(--border); border-radius: 14px;
+      padding: 24px; transition: border-color 0.3s var(--ease), box-shadow 0.3s var(--ease);
+      box-shadow: var(--shadow-card), var(--glow-inner);
+    }
+    .bento-item:hover { border-color: var(--border-h); }
+    .bento-item .bento-icon {
+      width: 40px; height: 40px; border-radius: 10px; display: flex;
+      align-items: center; justify-content: center; margin-bottom: 14px;
+      font-size: 18px;
+    }
+    .bento-item h3 {
+      font-size: 18px; font-weight: 700; margin-bottom: 8px; letter-spacing: -0.5px;
+    }
+    .bento-item p {
+      font-size: 14px; color: var(--t2); line-height: 1.6;
+    }
+    .bento-item code { font-size: 12px; }
+    .span-full { grid-column: 1 / -1; }
+
+    /* 14. Architecture Widget */
+    .arch-widget {
+      position: relative; width: 100%; min-height: 340px;
+      display: flex; flex-direction: column; align-items: center; gap: 24px;
+      padding: 20px 0;
+    }
+    .arch-row { display: flex; gap: 16px; align-items: center; justify-content: center; flex-wrap: wrap; }
+    .arch-node {
+      padding: 14px 24px; border-radius: 12px; border: 1.5px solid var(--border);
+      font-family: var(--mono); font-size: 13px; font-weight: 600;
+      cursor: pointer; transition: all 0.3s var(--ease); text-align: center;
+      min-width: 120px; position: relative;
+    }
+    .arch-node:hover { border-color: var(--border-h); transform: translateY(-2px); }
+    .arch-node.active { border-color: var(--blue); background: rgba(59,130,246,0.08); }
+    .arch-node-label { font-size: 11px; color: var(--t3); margin-top: 4px; font-weight: 400; }
+    .arch-node.host { border-color: var(--purple); }
+    .arch-node.host.active { background: rgba(139,92,246,0.08); border-color: var(--purple); }
+    .arch-node.client { border-color: var(--blue); }
+    .arch-node.client.active { background: rgba(59,130,246,0.08); border-color: var(--blue); }
+    .arch-node.server { border-color: var(--green); }
+    .arch-node.server.active { background: rgba(34,197,94,0.08); border-color: var(--green); }
+    .arch-arrow {
+      font-family: var(--mono); font-size: 20px; color: var(--t4);
+      animation: pulse 2s ease infinite;
+    }
+    .arch-info {
+      padding: 16px 20px; border-radius: 10px; background: var(--s3);
+      border: 1px solid var(--border); font-size: 14px; color: var(--t2);
+      line-height: 1.6; min-height: 60px; width: 100%; max-width: 600px;
+      transition: all 0.3s var(--ease);
+    }
+    .arch-info strong { color: var(--t1); }
+
+    /* 15. Comparison Widget */
+    .compare-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 0; margin-top: 28px;
+      border: 1px solid var(--border); border-radius: 14px; overflow: hidden;
+    }
+    .compare-col { padding: 0; }
+    .compare-header {
+      padding: 16px 20px; font-family: var(--mono); font-size: 14px; font-weight: 700;
+      border-bottom: 1px solid var(--border); text-align: center;
+    }
+    .compare-col:first-child .compare-header { background: rgba(139,92,246,0.06); color: var(--purple); border-right: 1px solid var(--border); }
+    .compare-col:last-child .compare-header { background: rgba(59,130,246,0.06); color: var(--blue); }
+    .compare-row-item {
+      padding: 14px 20px; border-bottom: 1px solid var(--border); font-size: 14px;
+      color: var(--t2); line-height: 1.5; min-height: 56px; display: flex; align-items: center;
+    }
+    .compare-col:first-child .compare-row-item { border-right: 1px solid var(--border); }
+    .compare-label {
+      font-family: var(--mono); font-size: 11px; color: var(--t4); font-weight: 600;
+      letter-spacing: 1px; text-transform: uppercase; display: block; margin-bottom: 4px;
+    }
+    .compare-row-item:last-child { border-bottom: none; }
+
+    /* 16. Challenge Widget - Decision Scenario */
+    .scenario-widget { margin-top: 20px; }
+    .scenario-card {
+      background: var(--s3); border: 1px solid var(--border); border-radius: 12px;
+      padding: 20px; margin-bottom: 16px; transition: all 0.3s var(--ease);
+    }
+    .scenario-card.answered { pointer-events: none; }
+    .scenario-title {
+      font-size: 15px; font-weight: 700; margin-bottom: 8px; display: flex;
+      align-items: center; gap: 8px;
+    }
+    .scenario-num {
+      font-family: var(--mono); font-size: 11px; color: var(--t4);
+      background: var(--s4); padding: 2px 8px; border-radius: 4px;
+    }
+    .scenario-desc { font-size: 14px; color: var(--t2); line-height: 1.6; margin-bottom: 14px; }
+    .scenario-options { display: flex; gap: 8px; flex-wrap: wrap; }
+    .scenario-opt {
+      padding: 8px 18px; border-radius: 8px; border: 1px solid var(--border);
+      background: var(--s2); font-family: var(--mono); font-size: 13px; color: var(--t2);
+      cursor: pointer; transition: all 0.3s var(--ease);
+    }
+    .scenario-opt:hover { border-color: var(--border-h); color: var(--t1); transform: translateY(-1px); }
+    .scenario-opt.correct { border-color: var(--green); color: var(--green); background: rgba(34,197,94,0.08); }
+    .scenario-opt.wrong { border-color: #ef4444; color: #ef4444; background: rgba(239,68,68,0.05); animation: shake 0.4s ease; }
+    .scenario-explain {
+      margin-top: 12px; padding: 12px 16px; border-radius: 8px; background: var(--s2);
+      border-left: 2px solid var(--green); font-size: 13px; color: var(--t2); line-height: 1.6;
+      display: none; animation: fadeUp 0.4s var(--ease-spring);
+    }
+    .scenario-explain.show { display: block; }
+
+    /* 17. Classify Primitives Widget */
+    .classify-widget { margin-top: 20px; }
+    .classify-item {
+      display: flex; align-items: center; gap: 12px; padding: 12px 16px;
+      background: var(--s3); border: 1px solid var(--border); border-radius: 10px;
+      margin-bottom: 10px; transition: all 0.3s var(--ease);
+    }
+    .classify-item.answered { pointer-events: none; }
+    .classify-desc {
+      flex: 1; font-size: 14px; color: var(--t2); line-height: 1.5;
+    }
+    .classify-btns { display: flex; gap: 6px; flex-shrink: 0; }
+    .classify-btn {
+      padding: 6px 14px; border-radius: 6px; border: 1px solid var(--border);
+      background: var(--s2); font-family: var(--mono); font-size: 12px; color: var(--t3);
+      cursor: pointer; transition: all 0.3s var(--ease);
+    }
+    .classify-btn:hover { border-color: var(--border-h); color: var(--t1); }
+    .classify-btn.correct { border-color: var(--green); color: var(--green); background: rgba(34,197,94,0.08); }
+    .classify-btn.wrong { border-color: #ef4444; color: #ef4444; animation: shake 0.4s ease; }
+    .classify-feedback {
+      font-size: 12px; color: var(--t3); margin-top: 6px; padding-left: 16px;
+      border-left: 2px solid var(--green); display: none;
+    }
+    .classify-feedback.show { display: block; animation: fadeUp 0.3s var(--ease); }
+
+    /* 18. Code Sandbox */
+    .sb-bar {
+      display: flex; justify-content: space-between; align-items: center;
+      padding-bottom: 14px; border-bottom: 1px solid var(--border); margin-bottom: 14px;
+    }
+    .sb-file {
+      display: flex; align-items: center; gap: 8px;
+      font-family: var(--mono); font-size: 13px; color: var(--t2);
+    }
+    .sb-dot { width: 8px; height: 8px; border-radius: 50%; }
+    .sb-dot.live { background: var(--green); animation: pulse 2s ease infinite; }
+    .sb-btns { display: flex; gap: 8px; }
+    .sb-btn-ghost {
+      padding: 6px 14px; border-radius: 8px; border: 1px solid var(--border);
+      background: transparent; color: var(--t3); font-family: var(--mono); font-size: 12px;
+      cursor: pointer; transition: all 0.3s var(--ease);
+    }
+    .sb-btn-ghost:hover { border-color: var(--border-h); color: var(--t2); }
+    .sb-btn-run {
+      padding: 6px 18px; border-radius: 8px; border: none;
+      background: var(--t1); color: var(--bg); font-family: var(--mono); font-size: 12px;
+      font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px;
+      transition: all 0.2s var(--ease);
+    }
+    .sb-btn-run:hover { transform: scale(1.05); }
+    .sb-btn-run:active { transform: scale(0.96); }
+    .sb-btn-run svg { width: 12px; height: 12px; }
+    .sb-panels { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .sb-editor, .sb-output { min-height: 200px; }
+    .sb-label {
+      font-family: var(--mono); font-size: 11px; color: var(--t4); font-weight: 600;
+      letter-spacing: 1px; text-transform: uppercase; margin-bottom: 8px;
+    }
+    .sb-code-wrap {
+      display: flex; background: var(--s1); border: 1px solid var(--border);
+      border-radius: 10px; overflow: hidden;
+    }
+    .sb-gutter {
+      font-family: var(--mono); font-size: 13px; line-height: 1.7;
+      color: var(--t4); text-align: right; padding: 12px 12px 12px 8px;
+      user-select: none; min-width: 28px; white-space: pre;
+      border-right: 1px solid var(--border);
+    }
+    .sb-code-wrap textarea {
+      flex: 1; background: transparent; border: none; color: var(--t1);
+      font-family: var(--mono); font-size: 13px; line-height: 1.7;
+      padding: 12px; resize: none; outline: none; min-height: 180px;
+      tab-size: 2;
+    }
+    .sb-output iframe {
+      width: 100%; min-height: 200px; border: 1px solid var(--border);
+      border-radius: 10px; background: #fff;
+    }
+
+    /* 19. Protocol Inspector */
+    .proto-inspector { margin-top: 16px; }
+    .proto-step {
+      display: flex; gap: 12px; margin-bottom: 14px; align-items: flex-start;
+      cursor: pointer; transition: all 0.3s var(--ease);
+    }
+    .proto-step:hover { transform: translateX(4px); }
+    .proto-num {
+      width: 28px; height: 28px; border-radius: 50%; border: 1.5px solid var(--border);
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+      font-family: var(--mono); font-size: 12px; color: var(--t4);
+      transition: all 0.3s var(--ease);
+    }
+    .proto-step.active .proto-num { border-color: var(--cyan); color: var(--cyan); background: rgba(0,212,255,0.08); }
+    .proto-step-content { flex: 1; }
+    .proto-step-label {
+      font-family: var(--mono); font-size: 13px; font-weight: 600; color: var(--t2);
+      margin-bottom: 4px;
+    }
+    .proto-step-desc { font-size: 13px; color: var(--t3); }
+    .proto-json {
+      margin-top: 12px; padding: 16px; border-radius: 10px;
+      background: var(--s1); border: 1px solid var(--border);
+      font-family: var(--mono); font-size: 12px; line-height: 1.6;
+      color: var(--t2); white-space: pre-wrap; overflow-x: auto;
+      display: none;
+    }
+    .proto-json.show { display: block; animation: fadeUp 0.3s var(--ease); }
+    .proto-json .json-key { color: var(--cyan); }
+    .proto-json .json-str { color: var(--green); }
+    .proto-json .json-num { color: var(--orange); }
+    .proto-json .json-bool { color: var(--purple); }
+
+    /* 20. Config Builder */
+    .config-builder { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px; }
+    .config-form { display: flex; flex-direction: column; gap: 12px; }
+    .config-field label {
+      display: block; font-family: var(--mono); font-size: 12px;
+      color: var(--t3); margin-bottom: 4px; letter-spacing: 0.5px;
+    }
+    .config-field input, .config-field select {
+      width: 100%; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border);
+      background: var(--s1); color: var(--t1); font-family: var(--mono); font-size: 13px;
+      outline: none; transition: border-color 0.3s var(--ease);
+    }
+    .config-field input:focus, .config-field select:focus { border-color: var(--blue); }
+    .config-preview {
+      padding: 16px; border-radius: 10px; background: var(--s1);
+      border: 1px solid var(--border); font-family: var(--mono);
+      font-size: 12px; line-height: 1.6; white-space: pre-wrap; color: var(--t2);
+      overflow: auto; max-height: 300px;
+    }
+
+    /* 21. Fix-the-Bug Widget */
+    .bug-widget { margin-top: 16px; }
+    .bug-code {
+      padding: 16px; border-radius: 10px; background: var(--s1);
+      border: 1px solid var(--border); font-family: var(--mono);
+      font-size: 13px; line-height: 1.7; margin-bottom: 12px;
+    }
+    .bug-line {
+      padding: 2px 8px; cursor: pointer; border-radius: 4px;
+      transition: all 0.2s var(--ease); display: flex; gap: 12px;
+    }
+    .bug-line:hover { background: rgba(255,255,255,0.04); }
+    .bug-line.selected { background: rgba(239,68,68,0.08); border-left: 2px solid #ef4444; }
+    .bug-line.correct-pick { background: rgba(34,197,94,0.08); border-left: 2px solid var(--green); }
+    .bug-line-num { color: var(--t4); min-width: 24px; text-align: right; user-select: none; }
+    .bug-line-code { color: var(--t2); }
+    .bug-submit {
+      padding: 8px 20px; border-radius: 8px; border: 1px solid var(--border);
+      background: var(--s2); color: var(--t2); font-family: var(--mono); font-size: 13px;
+      cursor: pointer; transition: all 0.3s var(--ease);
+    }
+    .bug-submit:hover { border-color: var(--border-h); color: var(--t1); }
+    .bug-result {
+      margin-top: 12px; padding: 12px 16px; border-radius: 8px;
+      font-size: 13px; line-height: 1.6; display: none;
+    }
+    .bug-result.show { display: block; animation: fadeUp 0.3s var(--ease); }
+    .bug-result.success { background: rgba(34,197,94,0.06); border-left: 2px solid var(--green); color: var(--t2); }
+    .bug-result.fail { background: rgba(239,68,68,0.06); border-left: 2px solid #ef4444; color: var(--t2); }
+
+    /* 22. Quiz */
+    .quiz-body { padding: 8px 0; }
+    .quiz-q {
+      font-size: 16px; font-weight: 600; margin-bottom: 18px; line-height: 1.5;
+    }
+    .quiz-opts { display: flex; flex-direction: column; gap: 10px; }
+    .quiz-opt {
+      padding: 14px 18px; border-radius: 10px; border: 1px solid var(--border);
+      background: var(--s3); font-size: 14px; color: var(--t2); cursor: pointer;
+      transition: all 0.3s var(--ease); display: flex; align-items: flex-start; gap: 12px;
+      line-height: 1.5;
+    }
+    .quiz-opt:hover { border-color: var(--border-h); color: var(--t1); transform: translateX(4px); }
+    .quiz-opt.disabled { pointer-events: none; }
+    .quiz-opt.correct {
+      border-color: var(--green); background: rgba(34,197,94,0.08); color: var(--t1);
+    }
+    .quiz-opt.wrong {
+      border-color: #ef4444; background: rgba(239,68,68,0.05); color: var(--t2);
+      animation: shake 0.4s ease;
+    }
+    .quiz-letter {
+      font-family: var(--mono); font-size: 12px; font-weight: 700; color: var(--t4);
+      width: 24px; height: 24px; border-radius: 6px; border: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .quiz-opt.correct .quiz-letter { border-color: var(--green); color: var(--green); }
+    .quiz-opt.wrong .quiz-letter { border-color: #ef4444; color: #ef4444; }
+    .quiz-explain {
+      margin-top: 16px; padding: 16px; border-radius: 10px; background: var(--s3);
+      border-left: 2px solid var(--green); font-size: 14px; color: var(--t2);
+      line-height: 1.6; display: none;
+    }
+    .quiz-explain.show { display: block; animation: fadeUp 0.4s var(--ease-spring); }
+
+    /* 23. Chapter End */
+    .ch-end { text-align: center; padding: 120px 10vw; }
+    .ch-end h2 { font-size: 36px; margin-bottom: 16px; }
+    .ch-end p.body { max-width: 480px; margin-left: auto; margin-right: auto; }
+    .ch-end-sub { font-size: 13px; font-family: var(--mono); color: var(--t4); margin-top: 16px; }
+
+    /* 24. Buttons */
+    .btn-next {
+      display: inline-flex; align-items: center; gap: 10px;
+      padding: 14px 28px; border-radius: 12px; border: 1px solid var(--border);
+      background: var(--s2); color: var(--t1); font-family: var(--mono); font-size: 14px;
+      font-weight: 600; cursor: pointer; transition: all 0.3s var(--ease); margin-top: 28px;
+    }
+    .btn-next:hover { border-color: var(--border-h); transform: scale(1.05); box-shadow: 0 0 20px rgba(255,255,255,0.06); }
+    .btn-next:active { transform: scale(0.96); }
+    .btn-next svg { width: 16px; height: 16px; }
+
+    /* 25. Cursor Glow */
+    .cursor-glow {
+      position: fixed; width: 300px; height: 300px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(59,130,246,0.06) 0%, transparent 70%);
+      pointer-events: none; z-index: 9995; transform: translate(-50%, -50%);
+      transition: opacity 0.3s;
+    }
+
+    /* 26. NxM Widget */
+    .nm-widget { text-align: center; margin-top: 16px; }
+    .nm-row { display: flex; justify-content: center; gap: 24px; align-items: center; margin: 16px 0; flex-wrap: wrap; }
+    .nm-box {
+      padding: 10px 18px; border-radius: 8px; border: 1px solid var(--border);
+      font-family: var(--mono); font-size: 13px; color: var(--t2);
+      background: var(--s3);
+    }
+    .nm-box.client-box { border-color: var(--purple); color: var(--purple); }
+    .nm-box.server-box { border-color: var(--green); color: var(--green); }
+    .nm-result {
+      font-family: var(--mono); font-size: 28px; font-weight: 800;
+      margin: 16px 0 8px;
+    }
+    .nm-result .highlight { color: var(--blue); }
+    .nm-result .vs { color: var(--t4); font-size: 18px; font-weight: 400; margin: 0 8px; }
+    .nm-slider-row { display: flex; justify-content: center; gap: 32px; margin: 20px 0; flex-wrap: wrap; }
+    .nm-slider-group { text-align: center; }
+    .nm-slider-group label {
+      display: block; font-family: var(--mono); font-size: 12px; color: var(--t3); margin-bottom: 6px;
+    }
+    .nm-slider-group input[type="range"] {
+      width: 160px; accent-color: var(--blue);
+    }
+    .nm-slider-val {
+      font-family: var(--mono); font-size: 14px; color: var(--t1); font-weight: 600;
+    }
+
+    /* 27. Finish Screen */
+    .finish-screen { text-align: center; padding: 160px 10vw 120px; }
+    .finish-screen h2 { font-size: 48px; font-weight: 900; letter-spacing: -2px; margin-bottom: 16px; }
+    .finish-xp {
+      font-family: var(--mono); font-size: 48px; font-weight: 800;
+      color: var(--green); margin: 24px 0;
+    }
+    .finish-summary {
+      font-size: 17px; color: var(--t2); max-width: 500px; margin: 0 auto; line-height: 1.8;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .sidebar { display: none; }
+      .hero-title { font-size: clamp(36px, 8vw, 80px); letter-spacing: -1px; }
+      .sect { padding: 60px 6vw; }
+      .sect h2 { font-size: 28px; }
+      .bento-3, .bento-2 { grid-template-columns: 1fr; }
+      .compare-grid { grid-template-columns: 1fr; }
+      .sb-panels { grid-template-columns: 1fr; }
+      .config-builder { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Cursor glow -->
+<div class="cursor-glow" id="cursorGlow"></div>
+
+<!-- Scroll progress -->
+<div class="scroll-progress" id="scrollProgress"></div>
+
+<!-- Toast -->
+<div class="g-toast" id="gToast">
+  <div class="g-toast-icon">
+    <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg>
+  </div>
+  <span id="gToastTxt"></span>
+  <svg class="g-toast-timer" viewBox="0 0 20 20">
+    <circle cx="10" cy="10" r="8"/>
+    <circle class="timer-fill" cx="10" cy="10" r="8"/>
+  </svg>
+</div>
+
+<!-- Sidebar -->
+<nav class="sidebar" id="sidebar">
+  <div class="sidebar-brand">MCP</div>
+  <div class="sidebar-chapters" id="navChapters">
+    <div class="sidebar-dot active" onclick="goTo(0)">1</div>
+    <div class="sidebar-dot" onclick="goTo(1)">2</div>
+  </div>
+  <div class="sidebar-divider"></div>
+  <div class="sidebar-sections" id="sidebarSections"></div>
+  <div class="sidebar-divider"></div>
+  <div class="sidebar-xp" id="gXp">
+    <span class="sidebar-xp-dot"></span>
+    <span id="gXpVal">0</span>
+  </div>
+</nav>
+
+<!-- ============================================= -->
+<!-- CHAPTER 1: What is MCP & When to Use It       -->
+<!-- ============================================= -->
+<div class="chapter active" id="ch0">
+
+  <header class="hero">
+    <div class="hero-eyebrow">Chapter 01</div>
+    <h1 class="hero-title" data-text="What is|MCP?">What is <br>MCP<em>?</em></h1>
+    <p class="hero-desc">The open protocol that connects AI to everything else. Understand what it does, how it works, and when to reach for it instead of a REST API.</p>
+    <div class="hero-chips">
+      <div class="hero-chip"><span class="hero-chip-icon green"></span>8 min</div>
+      <div class="hero-chip"><span class="hero-chip-icon blue"></span>Beginner</div>
+      <div class="hero-chip"><span class="hero-chip-icon purple"></span>4 activities</div>
+    </div>
+  </header>
+
+  <!-- Section: The Problem -->
+  <section class="sect">
+    <div class="sect-tag">The Problem</div>
+    <h2>The N&times;M <span class="accent">integration nightmare</span></h2>
+    <p class="body">Imagine you have <strong>5 AI assistants</strong> (Claude, ChatGPT, Copilot, Cursor, Gemini) and <strong>8 data sources</strong> (GitHub, Slack, PostgreSQL, Google Drive, Jira, etc). Without a standard, each AI needs a custom integration for each source. That's <strong>5 &times; 8 = 40 integrations</strong> to build and maintain.</p>
+    <p class="body">MCP flips this to <strong>M + N</strong>. Each AI implements one MCP client. Each data source implements one MCP server. Now it's <strong>5 + 8 = 13 components</strong>. Any client talks to any server. That's the entire pitch.</p>
+
+    <div class="card">
+      <div class="nm-widget" id="nmWidget">
+        <div class="nm-slider-row">
+          <div class="nm-slider-group">
+            <label>AI Clients</label>
+            <input type="range" min="2" max="10" value="5" id="nmClients" oninput="updateNM()">
+            <div class="nm-slider-val" id="nmClientsVal">5</div>
+          </div>
+          <div class="nm-slider-group">
+            <label>Data Sources</label>
+            <input type="range" min="2" max="15" value="8" id="nmServers" oninput="updateNM()">
+            <div class="nm-slider-val" id="nmServersVal">8</div>
+          </div>
+        </div>
+        <div class="nm-row">
+          <div class="nm-box client-box" id="nmClientBoxes"></div>
+          <span style="color:var(--t4);font-family:var(--mono);font-size:13px">&times;</span>
+          <div class="nm-box server-box" id="nmServerBoxes"></div>
+        </div>
+        <div class="nm-result">
+          Without MCP: <span id="nmWithout" class="highlight">40</span>
+          <span class="vs">vs</span>
+          With MCP: <span id="nmWith" class="highlight">13</span>
+        </div>
+        <p style="font-size:13px;color:var(--t3);font-family:var(--mono)">Drag the sliders to see how the savings scale</p>
+      </div>
+    </div>
+  </section>
+
+  <div class="div"></div>
+
+  <!-- Section: What is MCP -->
+  <section class="sect">
+    <div class="sect-tag">Definition</div>
+    <h2>MCP is <span class="accent">USB-C</span> for AI</h2>
+    <p class="body"><strong>Model Context Protocol (MCP)</strong> is an open standard created by Anthropic in November 2024 for connecting AI applications to external tools and data. Think of it like <strong>USB-C for AI</strong> &mdash; a universal port that any AI app can use to plug into any data source.</p>
+    <p class="body">It's now governed by the <strong>Agentic AI Foundation</strong> under the Linux Foundation, co-founded by Anthropic, Block, and OpenAI. It's not locked to Claude &mdash; it works with ChatGPT, VS Code Copilot, Cursor, JetBrains, and any app that implements the protocol.</p>
+  </section>
+
+  <div class="div"></div>
+
+  <!-- Section: Architecture -->
+  <section class="sect">
+    <div class="sect-tag">Architecture</div>
+    <h2>Three players, <span class="accent-purple">one protocol</span></h2>
+    <p class="body">Every MCP interaction involves three components. Click each one to learn its role &mdash; then use the <strong>challenge below</strong> to test yourself.</p>
+
+    <div class="card">
+      <div class="arch-widget">
+        <div class="arch-row">
+          <div class="arch-node host" onclick="showArchInfo('host')" id="archHost">
+            HOST
+            <div class="arch-node-label">e.g. Claude Desktop</div>
+          </div>
+        </div>
+        <div class="arch-arrow">&darr;</div>
+        <div class="arch-row">
+          <div class="arch-node client" onclick="showArchInfo('client')" id="archClient">
+            CLIENT
+            <div class="arch-node-label">1 per server</div>
+          </div>
+          <div class="arch-node client" onclick="showArchInfo('client')" style="opacity:0.5">
+            CLIENT
+            <div class="arch-node-label">1 per server</div>
+          </div>
+        </div>
+        <div class="arch-arrow">&darr;</div>
+        <div class="arch-row">
+          <div class="arch-node server" onclick="showArchInfo('server')" id="archServer">
+            SERVER A
+            <div class="arch-node-label">e.g. GitHub</div>
+          </div>
+          <div class="arch-node server" onclick="showArchInfo('server')" style="opacity:0.5">
+            SERVER B
+            <div class="arch-node-label">e.g. Postgres</div>
+          </div>
+        </div>
+        <div class="arch-info" id="archInfo">Click a component above to learn what it does.</div>
+      </div>
+    </div>
+  </section>
+
+  <div class="div"></div>
+
+  <!-- Section: Three Primitives -->
+  <section class="sect">
+    <div class="sect-tag">Primitives</div>
+    <h2>Tools, Resources &amp; <span class="accent-green">Prompts</span></h2>
+    <p class="body">An MCP server can expose three types of capabilities. Each has a distinct purpose and a different actor that controls it. Understanding which to use when is one of the trickiest parts of MCP design.</p>
+
+    <div class="bento bento-3">
+      <div class="bento-item">
+        <div class="bento-icon" style="background:rgba(59,130,246,0.1);color:var(--blue)">&#9881;</div>
+        <h3 style="color:var(--blue)">Tools</h3>
+        <p><strong>Executable functions</strong> the AI can call. Think: "search flights", "create issue", "run query". The <strong>model decides</strong> when to use them based on the conversation.</p>
+        <p style="margin-top:8px"><code>tools/list</code> <code>tools/call</code></p>
+      </div>
+      <div class="bento-item">
+        <div class="bento-icon" style="background:rgba(139,92,246,0.1);color:var(--purple)">&#128196;</div>
+        <h3 style="color:var(--purple)">Resources</h3>
+        <p><strong>Read-only data</strong> that provides context. Think: file contents, database schemas, API docs. The <strong>application decides</strong> when to fetch them &mdash; the AI doesn't call them directly.</p>
+        <p style="margin-top:8px"><code>resources/read</code> <code>resources/list</code></p>
+      </div>
+      <div class="bento-item">
+        <div class="bento-icon" style="background:rgba(34,197,94,0.1);color:var(--green)">&#128172;</div>
+        <h3 style="color:var(--green)">Prompts</h3>
+        <p><strong>Reusable templates</strong> that structure interactions. Think: slash commands. The <strong>user invokes</strong> them explicitly &mdash; neither the AI nor the app decides automatically.</p>
+        <p style="margin-top:8px"><code>prompts/get</code> <code>prompts/list</code></p>
+      </div>
+    </div>
+
+    <!-- Classify Challenge -->
+    <div class="card" style="margin-top:24px">
+      <div style="font-family:var(--mono);font-size:12px;color:var(--blue);margin-bottom:12px;letter-spacing:1px">&#9889; CHALLENGE: CLASSIFY THE PRIMITIVE</div>
+      <p style="font-size:14px;color:var(--t2);margin-bottom:16px">For each capability below, decide: is it a <strong>Tool</strong>, <strong>Resource</strong>, or <strong>Prompt</strong>?</p>
+      <div class="classify-widget" id="classifyWidget"></div>
+      <div id="classifyScore" style="font-family:var(--mono);font-size:13px;color:var(--t3);margin-top:12px"></div>
+    </div>
+  </section>
+
+  <div class="div"></div>
+
+  <!-- Section: MCP vs REST -->
+  <section class="sect">
+    <div class="sect-tag">Comparison</div>
+    <h2>MCP vs <span class="accent">REST APIs</span></h2>
+    <p class="body">MCP doesn't replace REST. It <strong>complements</strong> it. An MCP server often calls REST APIs under the hood. REST is the backbone of service-to-service communication. MCP is the AI orchestration layer that makes those services accessible to language models.</p>
+
+    <div class="compare-grid">
+      <div class="compare-col">
+        <div class="compare-header">REST API</div>
+        <div class="compare-row-item"><div><span class="compare-label">Designed for</span>Any consumer (apps, humans, services)</div></div>
+        <div class="compare-row-item"><div><span class="compare-label">Communication</span>Request &rarr; Response (one way)</div></div>
+        <div class="compare-row-item"><div><span class="compare-label">State</span>Stateless by design</div></div>
+        <div class="compare-row-item"><div><span class="compare-label">Discovery</span>Developer reads docs, hardcodes endpoints</div></div>
+        <div class="compare-row-item"><div><span class="compare-label">Schema</span>Requires separate OpenAPI/Swagger spec</div></div>
+        <div class="compare-row-item"><div><span class="compare-label">Protocol</span>HTTP with REST conventions</div></div>
+      </div>
+      <div class="compare-col">
+        <div class="compare-header">MCP</div>
+        <div class="compare-row-item"><div><span class="compare-label">Designed for</span>AI agents and LLMs specifically</div></div>
+        <div class="compare-row-item"><div><span class="compare-label">Communication</span>Bidirectional (server can push notifications)</div></div>
+        <div class="compare-row-item"><div><span class="compare-label">State</span>Stateful sessions with capability negotiation</div></div>
+        <div class="compare-row-item"><div><span class="compare-label">Discovery</span>AI asks "What can I do?" at runtime</div></div>
+        <div class="compare-row-item"><div><span class="compare-label">Schema</span>Tools self-describe with JSON Schema</div></div>
+        <div class="compare-row-item"><div><span class="compare-label">Protocol</span>JSON-RPC 2.0 over stdio or HTTP</div></div>
+      </div>
+    </div>
+  </section>
+
+  <div class="div"></div>
+
+  <!-- Section: Decision Scenario Challenge -->
+  <section class="sect">
+    <div class="sect-tag">Challenge</div>
+    <h2>MCP, REST, <span class="accent-purple">or both?</span></h2>
+    <p class="body">For each scenario, decide: should you use MCP, a REST API, or both? There's a best answer for each, but the explanations reveal why.</p>
+
+    <div class="card">
+      <div class="scenario-widget" id="scenarioWidget"></div>
+      <div id="scenarioScore" style="font-family:var(--mono);font-size:13px;color:var(--t3);margin-top:8px"></div>
+    </div>
+  </section>
+
+  <div class="div"></div>
+
+  <!-- Section: Quiz -->
+  <section class="sect">
+    <div class="sect-tag">Knowledge Check</div>
+    <h2>Test your <span class="accent">understanding</span></h2>
+    <div class="card">
+      <div class="quiz-body" id="quiz0"></div>
+    </div>
+  </section>
+
+  <div class="div"></div>
+
+  <!-- Chapter End -->
+  <section class="sect ch-end">
+    <h2>Chapter 1 complete</h2>
+    <p class="body">You now know what MCP is, how its architecture works, and when to use it vs REST. Time to build something real.</p>
+    <button class="btn-next" onclick="goTo(1)">Continue to Build <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z"/></svg></button>
+    <div class="ch-end-sub">Chapter 2 &mdash; Build Your First MCP Server</div>
+  </section>
+
+</div>
+
+<!-- ============================================= -->
+<!-- CHAPTER 2: Build Your First MCP Server        -->
+<!-- ============================================= -->
+<div class="chapter" id="ch1">
+
+  <header class="hero">
+    <div class="hero-eyebrow">Chapter 02</div>
+    <h1 class="hero-title" data-text="Build Your|First Server">Build Your <br>First <em>Server</em></h1>
+    <p class="hero-desc">Go from zero to a working MCP server in TypeScript. You'll define tools, handle requests, and connect your server to an AI assistant.</p>
+    <div class="hero-chips">
+      <div class="hero-chip"><span class="hero-chip-icon green"></span>10 min</div>
+      <div class="hero-chip"><span class="hero-chip-icon blue"></span>Hands-on</div>
+      <div class="hero-chip"><span class="hero-chip-icon orange"></span>5 activities</div>
+    </div>
+  </header>
+
+  <!-- Section: Anatomy -->
+  <section class="sect">
+    <div class="sect-tag">Anatomy</div>
+    <h2>What the SDK <span class="accent">handles for you</span></h2>
+    <p class="body">Good news: you don't implement JSON-RPC from scratch. The <code>@modelcontextprotocol/sdk</code> package handles the protocol layer &mdash; initialization, capability negotiation, message framing, transport. <strong>You just write tool logic.</strong></p>
+    <p class="body">A minimal MCP server has three parts:</p>
+
+    <div class="bento bento-3">
+      <div class="bento-item">
+        <div class="bento-icon" style="background:rgba(59,130,246,0.1);color:var(--blue)">1</div>
+        <h3>Create server</h3>
+        <p>Instantiate <code>McpServer</code> with a name and version. This is your server's identity during the handshake.</p>
+      </div>
+      <div class="bento-item">
+        <div class="bento-icon" style="background:rgba(139,92,246,0.1);color:var(--purple)">2</div>
+        <h3>Register tools</h3>
+        <p>Define what your server can do. Each tool gets a name, description, input schema (Zod), and a handler function.</p>
+      </div>
+      <div class="bento-item">
+        <div class="bento-icon" style="background:rgba(34,197,94,0.1);color:var(--green)">3</div>
+        <h3>Connect transport</h3>
+        <p>Attach a transport (stdio for local, HTTP for remote) and start listening. One line of code.</p>
+      </div>
+    </div>
+  </section>
+
+  <div class="div"></div>
+
+  <!-- Section: Protocol Inspector -->
+  <section class="sect">
+    <div class="sect-tag">Under the Hood</div>
+    <h2>The JSON-RPC <span class="accent-purple">handshake</span></h2>
+    <p class="body">When a host connects to your server, a precise message sequence happens over JSON-RPC 2.0. Click each step to see the actual messages. Then answer the question at the bottom.</p>
+
+    <div class="card">
+      <div class="proto-inspector" id="protoInspector"></div>
+      <div id="protoChallenge" style="margin-top:16px;padding:16px;border-radius:10px;background:var(--s3);border:1px solid var(--border);display:none">
+        <p style="font-size:14px;font-weight:600;margin-bottom:10px">After viewing all steps: What field in the server's initialize response tells the client which capabilities the server supports?</p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="scenario-opt" onclick="answerProto(this,'serverInfo')">serverInfo</button>
+          <button class="scenario-opt" onclick="answerProto(this,'capabilities')">capabilities</button>
+          <button class="scenario-opt" onclick="answerProto(this,'protocolVersion')">protocolVersion</button>
+        </div>
+        <div id="protoAnswer" class="scenario-explain"></div>
+      </div>
+    </div>
+  </section>
+
+  <div class="div"></div>
+
+  <!-- Section: JSON Schema Primer -->
+  <section class="sect">
+    <div class="sect-tag">Prerequisite</div>
+    <h2>JSON Schema in <span class="accent-green">30 seconds</span></h2>
+    <p class="body">Before building your server, you need to know how <strong>input schemas</strong> work. When you register a tool, you define what parameters it accepts using <strong>Zod</strong> (the TypeScript SDK converts it to JSON Schema automatically). Here's a quick mapping:</p>
+
+    <div class="card">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+        <div>
+          <div style="font-family:var(--mono);font-size:11px;color:var(--t4);margin-bottom:8px;letter-spacing:1px">ZOD (WHAT YOU WRITE)</div>
+          <div style="padding:12px;border-radius:8px;background:var(--s1);font-family:var(--mono);font-size:13px;line-height:1.8;color:var(--t2)">
+            <span style="color:var(--cyan)">z</span>.<span style="color:var(--blue)">object</span>({<br>
+            &nbsp;&nbsp;<span style="color:var(--cyan)">text</span>: <span style="color:var(--cyan)">z</span>.<span style="color:var(--blue)">string</span>()<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;.<span style="color:var(--blue)">describe</span>(<span style="color:var(--green)">"Input text"</span>),<br>
+            &nbsp;&nbsp;<span style="color:var(--cyan)">limit</span>: <span style="color:var(--cyan)">z</span>.<span style="color:var(--blue)">number</span>()<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;.<span style="color:var(--blue)">optional</span>()<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;.<span style="color:var(--blue)">describe</span>(<span style="color:var(--green)">"Max chars"</span>)<br>
+            })
+          </div>
+        </div>
+        <div>
+          <div style="font-family:var(--mono);font-size:11px;color:var(--t4);margin-bottom:8px;letter-spacing:1px">JSON SCHEMA (WHAT THE AI SEES)</div>
+          <div style="padding:12px;border-radius:8px;background:var(--s1);font-family:var(--mono);font-size:13px;line-height:1.8;color:var(--t2)">
+            {<br>
+            &nbsp;&nbsp;<span style="color:var(--cyan)">"type"</span>: <span style="color:var(--green)">"object"</span>,<br>
+            &nbsp;&nbsp;<span style="color:var(--cyan)">"properties"</span>: {<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;<span style="color:var(--cyan)">"text"</span>: { <span style="color:var(--cyan)">"type"</span>: <span style="color:var(--green)">"string"</span> },<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;<span style="color:var(--cyan)">"limit"</span>: { <span style="color:var(--cyan)">"type"</span>: <span style="color:var(--green)">"number"</span> }<br>
+            &nbsp;&nbsp;},<br>
+            &nbsp;&nbsp;<span style="color:var(--cyan)">"required"</span>: [<span style="color:var(--green)">"text"</span>]<br>
+            }
+          </div>
+        </div>
+      </div>
+      <p style="font-size:13px;color:var(--t3);margin-top:12px">The <code>.describe()</code> string becomes the description the AI reads to understand each parameter. The better the description, the smarter the AI's tool usage.</p>
+    </div>
+  </section>
+
+  <div class="div"></div>
+
+  <!-- Section: Code Sandbox -->
+  <section class="sect">
+    <div class="sect-tag">Build</div>
+    <h2>Your first <span class="accent">MCP server</span></h2>
+    <p class="body">Let's build a <strong>word counter</strong> MCP server. It's simple, has no side effects, and demonstrates the full pattern. The sandbox below has the skeleton &mdash; hit <strong>Run</strong> to see the server's tool registration output.</p>
+    <p class="body" style="font-size:14px;color:var(--t3)">This is a simulation &mdash; the sandbox shows what the server definition looks like and what the AI receives when it calls <code>tools/list</code> and <code>tools/call</code>.</p>
+
+    <div class="card">
+      <div class="sb-bar">
+        <div class="sb-file"><span class="sb-dot live"></span>server.ts (simulated)</div>
+        <div class="sb-btns">
+          <button class="sb-btn-ghost" onclick="resetSB(0)">Reset</button>
+          <button class="sb-btn-run" onclick="runSB(0)"><svg viewBox="0 0 20 20" fill="currentColor"><path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z"/></svg>Run</button>
+        </div>
+      </div>
+      <div class="sb-panels">
+        <div class="sb-editor">
+          <div class="sb-label">Code</div>
+          <div class="sb-code-wrap">
+            <div class="sb-gutter" id="sbGutter0"></div>
+            <textarea id="sbCode0" spellcheck="false" oninput="updGutter(0)"></textarea>
+          </div>
+        </div>
+        <div class="sb-output">
+          <div class="sb-label">Output</div>
+          <iframe id="sbOut0" sandbox="allow-scripts"></iframe>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="div"></div>
+
+  <!-- Section: Config Builder -->
+  <section class="sect">
+    <div class="sect-tag">Connect</div>
+    <h2>Wire it to <span class="accent-purple">your AI app</span></h2>
+    <p class="body">Your server is built. Now you need to tell an AI application about it. Each app uses a config file or CLI command. The interactive builder below generates the config for your chosen platform.</p>
+
+    <div class="card">
+      <div class="config-builder">
+        <div class="config-form" id="configForm">
+          <div class="config-field">
+            <label>Platform</label>
+            <select id="cfgPlatform" onchange="updateConfig()">
+              <option value="claude-desktop">Claude Desktop</option>
+              <option value="claude-code">Claude Code (CLI)</option>
+              <option value="vscode">VS Code</option>
+              <option value="cursor">Cursor</option>
+            </select>
+          </div>
+          <div class="config-field">
+            <label>Server name</label>
+            <input type="text" id="cfgName" value="word-counter" oninput="updateConfig()">
+          </div>
+          <div class="config-field">
+            <label>Command</label>
+            <input type="text" id="cfgCommand" value="node" oninput="updateConfig()">
+          </div>
+          <div class="config-field">
+            <label>Server path</label>
+            <input type="text" id="cfgPath" value="/path/to/server/build/index.js" oninput="updateConfig()">
+          </div>
+          <div class="config-field">
+            <label>Transport</label>
+            <select id="cfgTransport" onchange="updateConfig()">
+              <option value="stdio">stdio (local)</option>
+              <option value="http">Streamable HTTP (remote)</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <div style="font-family:var(--mono);font-size:11px;color:var(--t4);margin-bottom:8px;letter-spacing:1px">GENERATED CONFIG</div>
+          <div class="config-preview" id="configPreview"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="div"></div>
+
+  <!-- Section: The stdout trap -->
+  <section class="sect">
+    <div class="sect-tag">Challenge</div>
+    <h2>Find <span class="accent" style="color:#ef4444">the bug</span></h2>
+    <p class="body">This MCP server connects and lists its tools successfully, but when the AI calls a tool, the response comes back garbled. <strong>Click the line that causes the problem.</strong></p>
+
+    <div class="card">
+      <div class="bug-widget" id="bugWidget"></div>
+    </div>
+  </section>
+
+  <div class="div"></div>
+
+  <!-- Section: Quiz -->
+  <section class="sect">
+    <div class="sect-tag">Knowledge Check</div>
+    <h2>Test your <span class="accent-green">build skills</span></h2>
+    <div class="card">
+      <div class="quiz-body" id="quiz1"></div>
+    </div>
+  </section>
+
+  <div class="div"></div>
+
+  <!-- Finish Screen -->
+  <section class="sect ch-end finish-screen">
+    <h2>Tutorial complete</h2>
+    <div class="finish-xp" id="finishXp">0 XP</div>
+    <p class="finish-summary">You've learned what MCP is, when to use it vs REST APIs, and how to build and connect your first MCP server. You're ready to build real tools that plug into any AI assistant.</p>
+    <p class="body" style="margin-top:24px;max-width:480px;margin-left:auto;margin-right:auto;font-size:14px;color:var(--t3)">
+      <strong style="color:var(--t2)">Next steps:</strong> Install the TypeScript SDK (<code>npm i @modelcontextprotocol/sdk zod</code>), build a server for one of your own APIs, and connect it to Claude Code with <code>claude mcp add</code>.
+    </p>
+  </section>
+
+</div>
+
+<script>
+/* ============================== */
+/* 1. STATE & DATA                */
+/* ============================== */
+let currentCh = 0;
+let completed = new Set();
+let xp = 0;
+let interacted = new Set();
+
+const CHAPTERS = [
+  { id: 'ch0', title: 'What is MCP?', sections: 7 },
+  { id: 'ch1', title: 'Build Your First Server', sections: 7 }
+];
+
+/* Sandbox defaults - use array join to avoid backtick issues */
+const SB_DEFAULTS = [
+  [
+    '// MCP Server: Word Counter',
+    '// This simulates what the TypeScript SDK does',
+    '',
+    'const server = {',
+    '  name: "word-counter",',
+    '  version: "1.0.0",',
+    '  tools: [{',
+    '    name: "count_words",',
+    '    description: "Count words in a text string",',
+    '    inputSchema: {',
+    '      type: "object",',
+    '      properties: {',
+    '        text: {',
+    '          type: "string",',
+    '          description: "The text to count words in"',
+    '        }',
+    '      },',
+    '      required: ["text"]',
+    '    },',
+    '    handler: function(params) {',
+    '      const words = params.text.trim().split(/\\s+/);',
+    '      const count = params.text.trim() === "" ? 0 : words.length;',
+    '      return {',
+    '        content: [{',
+    '          type: "text",',
+    '          text: "Word count: " + count',
+    '        }]',
+    '      };',
+    '    }',
+    '  }]',
+    '};',
+    '',
+    '// Simulate tools/list response',
+    'document.write("<h3>tools/list response:</h3>");',
+    'document.write("<pre>" + JSON.stringify({',
+    '  tools: server.tools.map(function(t) {',
+    '    return { name: t.name, description: t.description, inputSchema: t.inputSchema };',
+    '  })',
+    '}, null, 2) + "</pre>");',
+    '',
+    '// Simulate tools/call',
+    'var result = server.tools[0].handler({ text: "Hello MCP world" });',
+    'document.write("<h3>tools/call result:</h3>");',
+    'document.write("<pre>" + JSON.stringify(result, null, 2) + "</pre>");'
+  ].join('\n')
+];
+
+/* Classify primitives data */
+const CLASSIFY_DATA = [
+  { desc: 'A function that sends a Slack message to a channel', answer: 'Tool', explain: 'Sending a message is an action with side effects. The AI decides when to invoke it based on the conversation.' },
+  { desc: 'The schema of your PostgreSQL users table', answer: 'Resource', explain: 'A database schema is read-only context data. The application fetches it to give the AI background knowledge.' },
+  { desc: 'A "/summarize" template that structures a summarization request', answer: 'Prompt', explain: 'This is a reusable template invoked explicitly by the user via a slash command.' },
+  { desc: 'A function that queries a weather API and returns the forecast', answer: 'Tool', explain: 'Querying an API is an executable action. The model calls it when the user asks about weather.' },
+  { desc: 'The contents of a README.md file from a GitHub repo', answer: 'Resource', explain: 'File contents are read-only data. The application can fetch this to provide context without the AI "calling" anything.' },
+  { desc: 'A "/deploy" workflow that asks for environment and branch inputs', answer: 'Prompt', explain: 'A parameterized workflow template that the user explicitly triggers. The AI and app don\'t auto-invoke it.' }
+];
+
+/* Decision scenario data */
+const SCENARIO_DATA = [
+  {
+    title: 'Internal dashboard needs user data from your API',
+    desc: 'Your React dashboard needs to fetch and display user profiles from your backend. No AI involved.',
+    options: ['MCP', 'REST API', 'Both'],
+    correct: 'REST API',
+    explain: 'No AI in the loop means no need for MCP. REST is the standard for app-to-service communication. MCP only adds value when an AI model needs to discover and use capabilities.'
+  },
+  {
+    title: 'Claude needs to query your Postgres database',
+    desc: 'You want Claude to answer questions about your data by running SQL queries. The data changes frequently.',
+    options: ['MCP', 'REST API', 'Both'],
+    correct: 'MCP',
+    explain: 'Claude needs to dynamically discover available tables and run queries based on conversation context. An MCP server wrapping your database lets Claude ask "what tables exist?" and then construct queries. A static REST API would require you to pre-define every possible query endpoint.'
+  },
+  {
+    title: 'Multi-platform tool for AI assistants',
+    desc: 'You want to build a GitHub integration that works with Claude, ChatGPT, VS Code Copilot, and Cursor simultaneously.',
+    options: ['MCP', 'REST API', 'Both'],
+    correct: 'MCP',
+    explain: 'MCP is an open standard supported by all these platforms. Build one MCP server, and any MCP-compatible AI client can use it. This is the USB-C analogy in action. A REST API would require each AI to have a custom integration.'
+  },
+  {
+    title: 'Mobile app + AI assistant share the same backend',
+    desc: 'Your mobile app calls your API directly for CRUD operations. You also want Claude to interact with the same data for AI-powered features.',
+    options: ['MCP', 'REST API', 'Both'],
+    correct: 'Both',
+    explain: 'The mobile app uses REST directly (no AI needed). Claude uses an MCP server that wraps those same REST endpoints to make them AI-accessible. This is the most common real-world pattern: MCP and REST coexist, with MCP as the AI orchestration layer on top.'
+  }
+];
+
+/* Bug hunt data */
+const BUG_LINES = [
+  { num: 1, code: 'import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";', bug: false },
+  { num: 2, code: 'import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";', bug: false },
+  { num: 3, code: '', bug: false },
+  { num: 4, code: 'const server = new McpServer({ name: "my-tool", version: "1.0.0" });', bug: false },
+  { num: 5, code: '', bug: false },
+  { num: 6, code: 'server.registerTool("greet", {', bug: false },
+  { num: 7, code: '  description: "Generate a greeting",', bug: false },
+  { num: 8, code: '  inputSchema: { name: z.string() },', bug: false },
+  { num: 9, code: '}, async ({ name }) => {', bug: false },
+  { num: 10, code: '  const greeting = `Hello, ${name}! Welcome aboard.`;', bug: false },
+  { num: 11, code: '  console.log("Generated greeting for: " + name);', bug: true },
+  { num: 12, code: '  return { content: [{ type: "text", text: greeting }] };', bug: false },
+  { num: 13, code: '});', bug: false },
+  { num: 14, code: '', bug: false },
+  { num: 15, code: 'const transport = new StdioServerTransport();', bug: false },
+  { num: 16, code: 'await server.connect(transport);', bug: false }
+];
+
+/* Quiz data */
+const QUIZZES = [
+  {
+    question: 'Your team has a PostgreSQL database and wants Claude to answer natural language questions about the data. A colleague suggests building a set of REST endpoints like GET /users and GET /orders. What\'s the stronger approach?',
+    options: [
+      'Build the REST endpoints \u2014 Claude can call them via HTTP',
+      'Build an MCP server that exposes query tools \u2014 Claude discovers available tables and constructs queries dynamically',
+      'Give Claude direct database credentials so it can run SQL',
+      'Build a GraphQL API with schema introspection for Claude to query'
+    ],
+    correct: 1,
+    explain: 'An MCP server lets Claude dynamically discover your database schema and construct queries based on the conversation. Pre-defined REST endpoints limit Claude to queries you anticipated. Direct DB access is a security risk. GraphQL helps with flexible queries but lacks the AI-native discovery and tool-calling protocol that MCP provides.'
+  },
+  {
+    question: 'You\'re deploying an MCP server to a cloud VM so remote Claude Desktop users can connect. Your server currently uses StdioServerTransport. When users try to connect via the VM\'s IP address, it fails. What needs to change?',
+    options: [
+      'Switch to Streamable HTTP transport \u2014 stdio only works for local subprocesses, not network connections',
+      'Open port 3000 on the firewall \u2014 stdio servers listen on port 3000 by default',
+      'Add the VM\'s IP to the server\'s allowlist \u2014 stdio blocks remote connections by default',
+      'Nothing \u2014 restart the server and try again'
+    ],
+    correct: 0,
+    explain: 'Stdio transport works by reading/writing to the process\'s stdin/stdout streams \u2014 it has no network listener, no port, no IP. It only works when the host launches the server as a local subprocess. For remote access, you must switch to Streamable HTTP transport, which runs an actual HTTP server that clients can reach over the network.'
+  }
+];
+
+/* Protocol messages */
+const PROTO_STEPS = [
+  {
+    label: 'Client \u2192 Server: initialize',
+    desc: 'Client sends its capabilities and requested protocol version',
+    json: '{\n  <span class="json-key">"jsonrpc"</span>: <span class="json-str">"2.0"</span>,\n  <span class="json-key">"id"</span>: <span class="json-num">1</span>,\n  <span class="json-key">"method"</span>: <span class="json-str">"initialize"</span>,\n  <span class="json-key">"params"</span>: {\n    <span class="json-key">"protocolVersion"</span>: <span class="json-str">"2025-06-18"</span>,\n    <span class="json-key">"capabilities"</span>: {},\n    <span class="json-key">"clientInfo"</span>: {\n      <span class="json-key">"name"</span>: <span class="json-str">"claude-desktop"</span>,\n      <span class="json-key">"version"</span>: <span class="json-str">"1.0.0"</span>\n    }\n  }\n}'
+  },
+  {
+    label: 'Server \u2192 Client: initialize response',
+    desc: 'Server responds with its own capabilities and info',
+    json: '{\n  <span class="json-key">"jsonrpc"</span>: <span class="json-str">"2.0"</span>,\n  <span class="json-key">"id"</span>: <span class="json-num">1</span>,\n  <span class="json-key">"result"</span>: {\n    <span class="json-key">"protocolVersion"</span>: <span class="json-str">"2025-06-18"</span>,\n    <span class="json-key">"capabilities"</span>: {\n      <span class="json-key">"tools"</span>: { <span class="json-key">"listChanged"</span>: <span class="json-bool">true</span> }\n    },\n    <span class="json-key">"serverInfo"</span>: {\n      <span class="json-key">"name"</span>: <span class="json-str">"word-counter"</span>,\n      <span class="json-key">"version"</span>: <span class="json-str">"1.0.0"</span>\n    }\n  }\n}'
+  },
+  {
+    label: 'Client \u2192 Server: initialized',
+    desc: 'Client confirms it received the server\'s capabilities (notification, no response expected)',
+    json: '{\n  <span class="json-key">"jsonrpc"</span>: <span class="json-str">"2.0"</span>,\n  <span class="json-key">"method"</span>: <span class="json-str">"notifications/initialized"</span>\n}'
+  },
+  {
+    label: 'Client \u2192 Server: tools/list',
+    desc: 'Client asks what tools the server offers',
+    json: '{\n  <span class="json-key">"jsonrpc"</span>: <span class="json-str">"2.0"</span>,\n  <span class="json-key">"id"</span>: <span class="json-num">2</span>,\n  <span class="json-key">"method"</span>: <span class="json-str">"tools/list"</span>\n}'
+  },
+  {
+    label: 'Client \u2192 Server: tools/call',
+    desc: 'AI decides to use a tool and sends parameters',
+    json: '{\n  <span class="json-key">"jsonrpc"</span>: <span class="json-str">"2.0"</span>,\n  <span class="json-key">"id"</span>: <span class="json-num">3</span>,\n  <span class="json-key">"method"</span>: <span class="json-str">"tools/call"</span>,\n  <span class="json-key">"params"</span>: {\n    <span class="json-key">"name"</span>: <span class="json-str">"count_words"</span>,\n    <span class="json-key">"arguments"</span>: {\n      <span class="json-key">"text"</span>: <span class="json-str">"Hello MCP world"</span>\n    }\n  }\n}'
+  }
+];
+
+/* ============================== */
+/* 2. NAVIGATION                  */
+/* ============================== */
+function goTo(ch) {
+  if (ch === currentCh) return;
+  var prev = currentCh;
+  completed.add(prev);
+
+  /* Hide all chapters */
+  var chapters = document.querySelectorAll('.chapter');
+  chapters.forEach(function(c) { c.style.display = 'none'; c.classList.remove('active'); });
+
+  /* Show target */
+  var target = document.getElementById('ch' + ch);
+  target.style.display = 'block';
+  target.classList.add('active');
+
+  currentCh = ch;
+  window.scrollTo({ top: 0, behavior: 'instant' });
+
+  /* Award XP for chapter completion */
+  if (!interacted.has('ch_complete_' + prev)) {
+    interacted.add('ch_complete_' + prev);
+    awardXP(30, 'Chapter ' + (prev + 1) + ' done!');
+  }
+
+  updateNav();
+  initChapter(ch);
+  buildSidebarSections();
+  setupReveal();
+}
+
+function updateNav() {
+  var dots = document.querySelectorAll('.sidebar-dot');
+  dots.forEach(function(d, i) {
+    d.classList.remove('active', 'done');
+    if (i === currentCh) d.classList.add('active');
+    else if (completed.has(i)) d.classList.add('done');
+  });
+}
+
+/* ============================== */
+/* 3. XP + PARTICLES              */
+/* ============================== */
+function awardXP(amt, msg) {
+  xp += amt;
+  var el = document.getElementById('gXpVal');
+  el.textContent = xp;
+  el.style.animation = 'none';
+  el.offsetHeight;
+  el.style.animation = 'glowPulse 0.6s ease';
+
+  var xpWrap = document.getElementById('gXp');
+  burstParticles(xpWrap);
+  toast('+' + amt + ' XP \u2014 ' + msg);
+}
+
+function burstParticles(originEl) {
+  var rect = originEl.getBoundingClientRect();
+  for (var i = 0; i < 8; i++) {
+    var p = document.createElement('div');
+    var angle = (Math.PI * 2 / 8) * i;
+    var dist = 30 + Math.random() * 30;
+    p.style.cssText = 'position:fixed;width:4px;height:4px;border-radius:50%;background:var(--green);z-index:99998;pointer-events:none;left:' + (rect.left + rect.width/2) + 'px;top:' + (rect.top + rect.height/2) + 'px;--tx:' + (Math.cos(angle)*dist) + 'px;--ty:' + (Math.sin(angle)*dist) + 'px;animation:particleBurst 0.6s var(--ease) forwards;';
+    document.body.appendChild(p);
+    setTimeout(function(el) { el.remove(); }, 700, p);
+  }
+}
+
+/* ============================== */
+/* 4. TOAST                       */
+/* ============================== */
+var toastTimer;
+function toast(txt) {
+  var el = document.getElementById('gToast');
+  document.getElementById('gToastTxt').textContent = txt;
+  el.classList.remove('show');
+  void el.offsetWidth;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function() { el.classList.remove('show'); }, 3000);
+}
+
+/* ============================== */
+/* 5. SANDBOX                     */
+/* ============================== */
+function updGutter(i) {
+  var ta = document.getElementById('sbCode' + i);
+  var g = document.getElementById('sbGutter' + i);
+  var lines = ta.value.split('\n').length;
+  var nums = [];
+  for (var n = 1; n <= lines; n++) nums.push(n);
+  g.textContent = nums.join('\n');
+}
+
+function runSB(i) {
+  var code = document.getElementById('sbCode' + i).value;
+  var iframe = document.getElementById('sbOut' + i);
+  var doc = '<html><head><style>body{font-family:Inter,-apple-system,sans-serif;font-size:14px;padding:16px;color:#222;line-height:1.6}pre{background:#f4f4f4;padding:12px;border-radius:8px;overflow:auto;font-size:12px;line-height:1.5}h3{font-size:14px;margin:12px 0 8px;color:#666;font-weight:600}</style></head><body><script>' + code + '<\/script></body></html>';
+  iframe.srcdoc = doc;
+
+  /* Shimmer effect on run button */
+  var btn = iframe.closest('.card').querySelector('.sb-btn-run');
+  if (btn) {
+    btn.style.background = 'linear-gradient(90deg, var(--t1), var(--blue), var(--t1))';
+    btn.style.backgroundSize = '200% 100%';
+    btn.style.animation = 'shimmer 0.8s ease';
+    setTimeout(function() { btn.style.background = ''; btn.style.animation = ''; btn.style.backgroundSize = ''; }, 900);
+  }
+
+  if (!interacted.has('sb_run_' + i)) {
+    interacted.add('sb_run_' + i);
+    awardXP(15, 'Code executed!');
+  }
+}
+
+function resetSB(i) {
+  document.getElementById('sbCode' + i).value = SB_DEFAULTS[i] || '';
+  updGutter(i);
+  document.getElementById('sbOut' + i).srcdoc = '';
+}
+
+/* ============================== */
+/* 6. QUIZ                        */
+/* ============================== */
+function buildQuiz(containerId, data) {
+  var container = document.getElementById(containerId);
+  if (!container) return;
+  var letters = ['A', 'B', 'C', 'D'];
+  var html = '<div class="quiz-q">' + data.question + '</div>';
+  html += '<div class="quiz-opts">';
+  data.options.forEach(function(opt, i) {
+    html += '<div class="quiz-opt" onclick="answerQuiz(this,' + i + ',' + data.correct + ',\'' + containerId + '\')" style="animation:slideInLeft 0.3s var(--ease) ' + (i * 0.07) + 's both">';
+    html += '<span class="quiz-letter">' + letters[i] + '</span>';
+    html += '<span>' + opt + '</span>';
+    html += '</div>';
+  });
+  html += '</div>';
+  html += '<div class="quiz-explain" id="' + containerId + 'Explain">' + data.explain + '</div>';
+  container.innerHTML = html;
+}
+
+function answerQuiz(el, picked, correct, containerId) {
+  var opts = el.parentElement.querySelectorAll('.quiz-opt');
+  opts.forEach(function(o) { o.classList.add('disabled'); });
+
+  if (picked === correct) {
+    el.classList.add('correct');
+    if (!interacted.has('quiz_' + containerId)) {
+      interacted.add('quiz_' + containerId);
+      awardXP(20, 'Correct answer!');
+    }
+  } else {
+    el.classList.add('wrong');
+    opts[correct].classList.add('correct');
+  }
+
+  var explain = document.getElementById(containerId + 'Explain');
+  explain.classList.add('show');
+}
+
+/* ============================== */
+/* 7. N*M WIDGET                  */
+/* ============================== */
+function updateNM() {
+  var c = parseInt(document.getElementById('nmClients').value);
+  var s = parseInt(document.getElementById('nmServers').value);
+  document.getElementById('nmClientsVal').textContent = c;
+  document.getElementById('nmServersVal').textContent = s;
+  document.getElementById('nmWithout').textContent = c * s;
+  document.getElementById('nmWith').textContent = c + s;
+  document.getElementById('nmClientBoxes').textContent = c + ' clients';
+  document.getElementById('nmServerBoxes').textContent = s + ' servers';
+
+  if (!interacted.has('nm_widget')) {
+    interacted.add('nm_widget');
+    awardXP(10, 'Widget explored!');
+  }
+}
+
+/* ============================== */
+/* 8. ARCHITECTURE WIDGET         */
+/* ============================== */
+var archInfoData = {
+  host: '<strong>Host</strong> \u2014 The AI application (Claude Desktop, VS Code, Cursor). It creates and manages MCP clients. Think of it as the "main app" that the user interacts with. One host can manage multiple clients simultaneously.',
+  client: '<strong>Client</strong> \u2014 Created by the host. Each client maintains a dedicated 1:1 connection to exactly one MCP server. The host spawns one client per server it wants to connect to.',
+  server: '<strong>Server</strong> \u2014 A separate program that exposes tools, resources, and prompts. Can run locally (as a subprocess via stdio) or remotely (over HTTP). This is what you build as a developer.'
+};
+
+function showArchInfo(type) {
+  document.querySelectorAll('.arch-node').forEach(function(n) { n.classList.remove('active'); });
+  if (type === 'host') document.getElementById('archHost').classList.add('active');
+  else if (type === 'client') document.getElementById('archClient').classList.add('active');
+  else if (type === 'server') document.getElementById('archServer').classList.add('active');
+  document.getElementById('archInfo').innerHTML = archInfoData[type];
+
+  if (!interacted.has('arch_' + type)) {
+    interacted.add('arch_' + type);
+    if (interacted.has('arch_host') && interacted.has('arch_client') && interacted.has('arch_server')) {
+      awardXP(10, 'Architecture explored!');
+    }
+  }
+}
+
+/* ============================== */
+/* 9. CLASSIFY PRIMITIVES         */
+/* ============================== */
+var classifyCorrect = 0;
+function buildClassify() {
+  var container = document.getElementById('classifyWidget');
+  if (!container) return;
+  var html = '';
+  CLASSIFY_DATA.forEach(function(item, i) {
+    html += '<div class="classify-item" id="classify' + i + '">';
+    html += '<div class="classify-desc">' + item.desc + '</div>';
+    html += '<div class="classify-btns">';
+    ['Tool', 'Resource', 'Prompt'].forEach(function(opt) {
+      html += '<button class="classify-btn" onclick="answerClassify(' + i + ',\'' + opt + '\')">' + opt + '</button>';
+    });
+    html += '</div>';
+    html += '</div>';
+    html += '<div class="classify-feedback" id="classifyFb' + i + '"></div>';
+  });
+  container.innerHTML = html;
+}
+
+function answerClassify(idx, pick) {
+  var item = CLASSIFY_DATA[idx];
+  var row = document.getElementById('classify' + idx);
+  var fb = document.getElementById('classifyFb' + idx);
+  var btns = row.querySelectorAll('.classify-btn');
+
+  row.classList.add('answered');
+  btns.forEach(function(b) {
+    if (b.textContent === item.answer) b.classList.add('correct');
+    else if (b.textContent === pick && pick !== item.answer) b.classList.add('wrong');
+  });
+
+  if (pick === item.answer) classifyCorrect++;
+  fb.innerHTML = (pick === item.answer ? '\u2713 ' : '\u2717 ') + item.explain;
+  fb.classList.add('show');
+
+  var answered = document.querySelectorAll('.classify-item.answered').length;
+  if (answered === CLASSIFY_DATA.length) {
+    document.getElementById('classifyScore').textContent = classifyCorrect + '/' + CLASSIFY_DATA.length + ' correct';
+    if (!interacted.has('classify')) {
+      interacted.add('classify');
+      awardXP(classifyCorrect === CLASSIFY_DATA.length ? 25 : 15, classifyCorrect === CLASSIFY_DATA.length ? 'Perfect classification!' : 'Classification complete!');
+    }
+  }
+}
+
+/* ============================== */
+/* 10. DECISION SCENARIOS         */
+/* ============================== */
+var scenarioCorrect = 0;
+function buildScenarios() {
+  var container = document.getElementById('scenarioWidget');
+  if (!container) return;
+  var html = '';
+  SCENARIO_DATA.forEach(function(s, i) {
+    html += '<div class="scenario-card" id="scenario' + i + '">';
+    html += '<div class="scenario-title"><span class="scenario-num">' + (i+1) + '</span>' + s.title + '</div>';
+    html += '<div class="scenario-desc">' + s.desc + '</div>';
+    html += '<div class="scenario-options">';
+    s.options.forEach(function(opt) {
+      html += '<button class="scenario-opt" onclick="answerScenario(' + i + ',this,\'' + opt + '\')">' + opt + '</button>';
+    });
+    html += '</div>';
+    html += '<div class="scenario-explain" id="scenarioEx' + i + '">' + s.explain + '</div>';
+    html += '</div>';
+  });
+  container.innerHTML = html;
+}
+
+function answerScenario(idx, el, pick) {
+  var s = SCENARIO_DATA[idx];
+  var card = document.getElementById('scenario' + idx);
+  card.classList.add('answered');
+  var btns = card.querySelectorAll('.scenario-opt');
+  btns.forEach(function(b) {
+    if (b.textContent === s.correct) b.classList.add('correct');
+    else if (b === el && pick !== s.correct) b.classList.add('wrong');
+  });
+  if (pick === s.correct) scenarioCorrect++;
+  document.getElementById('scenarioEx' + idx).classList.add('show');
+
+  var answered = document.querySelectorAll('.scenario-card.answered').length;
+  if (answered === SCENARIO_DATA.length) {
+    document.getElementById('scenarioScore').textContent = scenarioCorrect + '/' + SCENARIO_DATA.length + ' correct';
+    if (!interacted.has('scenarios')) {
+      interacted.add('scenarios');
+      awardXP(scenarioCorrect === SCENARIO_DATA.length ? 25 : 15, scenarioCorrect === SCENARIO_DATA.length ? 'Perfect decisions!' : 'Scenarios complete!');
+    }
+  }
+}
+
+/* ============================== */
+/* 11. PROTOCOL INSPECTOR         */
+/* ============================== */
+var protoViewed = new Set();
+function buildProtoInspector() {
+  var container = document.getElementById('protoInspector');
+  if (!container) return;
+  var html = '';
+  PROTO_STEPS.forEach(function(step, i) {
+    html += '<div class="proto-step" id="protoStep' + i + '" onclick="toggleProto(' + i + ')">';
+    html += '<div class="proto-num">' + (i+1) + '</div>';
+    html += '<div class="proto-step-content">';
+    html += '<div class="proto-step-label">' + step.label + '</div>';
+    html += '<div class="proto-step-desc">' + step.desc + '</div>';
+    html += '</div>';
+    html += '</div>';
+    html += '<div class="proto-json" id="protoJson' + i + '">' + step.json + '</div>';
+  });
+  container.innerHTML = html;
+}
+
+function toggleProto(idx) {
+  var json = document.getElementById('protoJson' + idx);
+  var step = document.getElementById('protoStep' + idx);
+  var wasShown = json.classList.contains('show');
+
+  /* Close all */
+  document.querySelectorAll('.proto-json').forEach(function(j) { j.classList.remove('show'); });
+  document.querySelectorAll('.proto-step').forEach(function(s) { s.classList.remove('active'); });
+
+  if (!wasShown) {
+    json.classList.add('show');
+    step.classList.add('active');
+  }
+
+  protoViewed.add(idx);
+  if (protoViewed.size === PROTO_STEPS.length) {
+    document.getElementById('protoChallenge').style.display = 'block';
+    if (!interacted.has('proto_inspector')) {
+      interacted.add('proto_inspector');
+      awardXP(10, 'Protocol explored!');
+    }
+  }
+}
+
+function answerProto(el, pick) {
+  var btns = el.parentElement.querySelectorAll('.scenario-opt');
+  btns.forEach(function(b) { b.style.pointerEvents = 'none'; });
+  if (pick === 'capabilities') {
+    el.classList.add('correct');
+    if (!interacted.has('proto_answer')) {
+      interacted.add('proto_answer');
+      awardXP(20, 'Correct!');
+    }
+  } else {
+    el.classList.add('wrong');
+    btns.forEach(function(b) { if (b.textContent === 'capabilities') b.classList.add('correct'); });
+  }
+  var answer = document.getElementById('protoAnswer');
+  answer.innerHTML = 'The <code>capabilities</code> object in the initialize response tells the client what the server supports (e.g., <code>"tools": { "listChanged": true }</code>). <code>serverInfo</code> is just the name/version. <code>protocolVersion</code> is the spec version, not a list of capabilities.';
+  answer.classList.add('show');
+}
+
+/* ============================== */
+/* 12. BUG HUNT                   */
+/* ============================== */
+var bugSelected = -1;
+function buildBugWidget() {
+  var container = document.getElementById('bugWidget');
+  if (!container) return;
+  var html = '<div class="bug-code">';
+  BUG_LINES.forEach(function(line, i) {
+    html += '<div class="bug-line" id="bugLine' + i + '" onclick="selectBugLine(' + i + ')">';
+    html += '<span class="bug-line-num">' + line.num + '</span>';
+    html += '<span class="bug-line-code">' + (line.code || '&nbsp;') + '</span>';
+    html += '</div>';
+  });
+  html += '</div>';
+  html += '<button class="bug-submit" onclick="submitBug()">Submit answer</button>';
+  html += '<div class="bug-result" id="bugResult"></div>';
+  container.innerHTML = html;
+}
+
+function selectBugLine(idx) {
+  document.querySelectorAll('.bug-line').forEach(function(l) { l.classList.remove('selected'); });
+  document.getElementById('bugLine' + idx).classList.add('selected');
+  bugSelected = idx;
+}
+
+function submitBug() {
+  if (bugSelected < 0) { toast('Click a line first'); return; }
+  var result = document.getElementById('bugResult');
+  var isBug = BUG_LINES[bugSelected].bug;
+
+  if (isBug) {
+    document.getElementById('bugLine' + bugSelected).classList.add('correct-pick');
+    result.className = 'bug-result show success';
+    result.innerHTML = '<strong>Correct!</strong> Line 11 uses <code>console.log()</code>, which writes to <strong>stdout</strong>. In a stdio-based MCP server, stdout is the JSON-RPC message channel. Any non-protocol output on stdout corrupts the message stream. The fix: use <code>console.error()</code> (writes to stderr) for all logging.';
+    if (!interacted.has('bug_hunt')) {
+      interacted.add('bug_hunt');
+      awardXP(25, 'Bug found!');
+    }
+  } else {
+    document.getElementById('bugLine' + bugSelected).classList.add('selected');
+    result.className = 'bug-result show fail';
+    result.innerHTML = 'That line looks fine. Hint: the problem is about <strong>where output goes</strong> in a stdio server. Look for any line that writes to a stream it shouldn\'t.';
+  }
+}
+
+/* ============================== */
+/* 13. CONFIG BUILDER             */
+/* ============================== */
+function updateConfig() {
+  var platform = document.getElementById('cfgPlatform').value;
+  var name = document.getElementById('cfgName').value || 'my-server';
+  var cmd = document.getElementById('cfgCommand').value || 'node';
+  var path = document.getElementById('cfgPath').value || '/path/to/server';
+  var transport = document.getElementById('cfgTransport').value;
+  var preview = document.getElementById('configPreview');
+
+  var config = '';
+  if (platform === 'claude-code') {
+    if (transport === 'stdio') {
+      config = '# Run this in your terminal:\n\nclaude mcp add \\\n  --transport stdio \\\n  ' + name + ' \\\n  -- ' + cmd + ' ' + path;
+    } else {
+      config = '# Run this in your terminal:\n\nclaude mcp add \\\n  --transport http \\\n  ' + name + ' \\\n  http://your-server-url:3000/mcp';
+    }
+  } else {
+    var filePath = '';
+    if (platform === 'claude-desktop') filePath = '~/Library/Application Support/Claude/claude_desktop_config.json';
+    else if (platform === 'vscode') filePath = '.vscode/mcp.json';
+    else if (platform === 'cursor') filePath = '~/.cursor/mcp.json';
+
+    if (transport === 'stdio') {
+      config = '// ' + filePath + '\n{\n  "mcpServers": {\n    "' + name + '": {\n      "command": "' + cmd + '",\n      "args": ["' + path + '"]\n    }\n  }\n}';
+    } else {
+      config = '// ' + filePath + '\n{\n  "mcpServers": {\n    "' + name + '": {\n      "url": "http://your-server-url:3000/mcp"\n    }\n  }\n}';
+    }
+  }
+
+  preview.textContent = config;
+
+  if (!interacted.has('config_builder')) {
+    interacted.add('config_builder');
+    awardXP(10, 'Config explored!');
+  }
+}
+
+/* ============================== */
+/* 14. SCROLL REVEAL              */
+/* ============================== */
+function setupReveal() {
+  var obs = new IntersectionObserver(function(entries) {
+    entries.forEach(function(e) {
+      if (e.isIntersecting) e.target.classList.add('vis');
+    });
+  }, { threshold: 0.12 });
+  document.querySelectorAll('.chapter.active .sect').forEach(function(s) {
+    s.classList.remove('vis');
+    obs.observe(s);
+  });
+}
+
+/* ============================== */
+/* 15. HERO TEXT REVEAL           */
+/* ============================== */
+function heroTextReveal(heroEl) {
+  var h1 = heroEl.querySelector('.hero-title');
+  if (!h1 || h1.dataset.revealed) return;
+  h1.dataset.revealed = 'true';
+
+  var raw = h1.innerHTML;
+  var result = '';
+  var charIdx = 0;
+  var i = 0;
+
+  while (i < raw.length) {
+    if (raw[i] === '<') {
+      var closeIdx = raw.indexOf('>', i);
+      if (closeIdx !== -1) {
+        result += raw.substring(i, closeIdx + 1);
+        i = closeIdx + 1;
+      } else {
+        result += raw[i];
+        i++;
+      }
+    } else if (raw[i] === '&') {
+      var semiIdx = raw.indexOf(';', i);
+      if (semiIdx !== -1 && semiIdx - i < 10) {
+        var entity = raw.substring(i, semiIdx + 1);
+        result += '<span class="char" style="animation-delay:' + (charIdx * 0.025) + 's">' + entity + '</span>';
+        charIdx++;
+        i = semiIdx + 1;
+      } else {
+        result += '<span class="char" style="animation-delay:' + (charIdx * 0.025) + 's">' + raw[i] + '</span>';
+        charIdx++;
+        i++;
+      }
+    } else if (raw[i] === '\n' || raw[i] === '\r') {
+      result += raw[i];
+      i++;
+    } else {
+      result += '<span class="char" style="animation-delay:' + (charIdx * 0.025) + 's">' + raw[i] + '</span>';
+      charIdx++;
+      i++;
+    }
+  }
+
+  h1.innerHTML = result;
+}
+
+/* ============================== */
+/* 16. 3D CARD TILT               */
+/* ============================== */
+function initCardTilt() {
+  document.querySelectorAll('.card').forEach(function(card) {
+    card.addEventListener('mousemove', function(e) {
+      var rect = card.getBoundingClientRect();
+      var x = (e.clientX - rect.left) / rect.width - 0.5;
+      var y = (e.clientY - rect.top) / rect.height - 0.5;
+      card.style.transform = 'perspective(800px) rotateY(' + (x * 3) + 'deg) rotateX(' + (-y * 3) + 'deg)';
+    });
+    card.addEventListener('mouseleave', function() {
+      card.style.transform = '';
+    });
+  });
+}
+
+/* ============================== */
+/* 17. CURSOR GLOW                */
+/* ============================== */
+(function() {
+  var glow = document.getElementById('cursorGlow');
+  var mouseX = 0, mouseY = 0, glowX = 0, glowY = 0;
+  document.addEventListener('mousemove', function(e) { mouseX = e.clientX; mouseY = e.clientY; });
+  function animate() {
+    glowX += (mouseX - glowX) * 0.15;
+    glowY += (mouseY - glowY) * 0.15;
+    glow.style.left = glowX + 'px';
+    glow.style.top = glowY + 'px';
+    requestAnimationFrame(animate);
+  }
+  animate();
+})();
+
+/* ============================== */
+/* 18. SIDEBAR SECTIONS           */
+/* ============================== */
+function buildSidebarSections() {
+  var container = document.getElementById('sidebarSections');
+  var ch = document.getElementById('ch' + currentCh);
+  var sects = ch.querySelectorAll('.sect');
+  var html = '';
+  sects.forEach(function(s, i) {
+    html += '<div class="sidebar-sec-dot" onclick="scrollToSection(' + i + ')" title="Section ' + (i+1) + '"></div>';
+  });
+  container.innerHTML = html;
+}
+
+function scrollToSection(idx) {
+  var ch = document.getElementById('ch' + currentCh);
+  var sects = ch.querySelectorAll('.sect');
+  if (sects[idx]) sects[idx].scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+/* Section progress on scroll */
+function updSidebarOnScroll() {
+  var ch = document.getElementById('ch' + currentCh);
+  if (!ch) return;
+  var sects = ch.querySelectorAll('.sect');
+  var dots = document.querySelectorAll('.sidebar-sec-dot');
+  var scrollY = window.scrollY + window.innerHeight * 0.4;
+
+  sects.forEach(function(s, i) {
+    if (!dots[i]) return;
+    var top = s.getBoundingClientRect().top + window.scrollY;
+    if (scrollY >= top) {
+      dots[i].classList.add('visited');
+      if (i === findActiveSect(sects, scrollY)) dots[i].classList.add('active');
+      else dots[i].classList.remove('active');
+    }
+  });
+}
+
+function findActiveSect(sects, scrollY) {
+  var active = 0;
+  sects.forEach(function(s, i) {
+    var top = s.getBoundingClientRect().top + window.scrollY;
+    if (scrollY >= top) active = i;
+  });
+  return active;
+}
+
+/* Scroll progress bar */
+function updScrollProgress() {
+  var h = document.documentElement.scrollHeight - window.innerHeight;
+  var pct = h > 0 ? (window.scrollY / h * 100) : 0;
+  document.getElementById('scrollProgress').style.height = pct + '%';
+}
+
+window.addEventListener('scroll', function() {
+  updSidebarOnScroll();
+  updScrollProgress();
+});
+
+/* ============================== */
+/* 19. KEYBOARD SHORTCUTS         */
+/* ============================== */
+document.addEventListener('keydown', function(e) {
+  if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+    e.preventDefault();
+    var sbIdx = currentCh === 1 ? 0 : -1;
+    if (sbIdx >= 0) runSB(sbIdx);
+  }
+  if (e.key === 'ArrowRight' && !e.metaKey && !e.ctrlKey) {
+    if (document.activeElement.tagName !== 'TEXTAREA' && document.activeElement.tagName !== 'INPUT') {
+      if (currentCh < CHAPTERS.length - 1) goTo(currentCh + 1);
+    }
+  }
+  if (e.key === 'ArrowLeft' && !e.metaKey && !e.ctrlKey) {
+    if (document.activeElement.tagName !== 'TEXTAREA' && document.activeElement.tagName !== 'INPUT') {
+      if (currentCh > 0) goTo(currentCh - 1);
+    }
+  }
+});
+
+/* ============================== */
+/* 20. CHAPTER INIT               */
+/* ============================== */
+function initChapter(ch) {
+  var chEl = document.getElementById('ch' + ch);
+  var hero = chEl.querySelector('.hero');
+  if (hero) heroTextReveal(hero);
+
+  if (ch === 0) {
+    buildClassify();
+    buildScenarios();
+    buildQuiz('quiz0', QUIZZES[0]);
+    updateNM();
+  }
+  if (ch === 1) {
+    buildProtoInspector();
+    buildBugWidget();
+    buildQuiz('quiz1', QUIZZES[1]);
+    updateConfig();
+    /* Init sandbox */
+    document.getElementById('sbCode0').value = SB_DEFAULTS[0];
+    updGutter(0);
+  }
+
+  initCardTilt();
+
+  /* Update finish XP */
+  var finishEl = document.getElementById('finishXp');
+  if (finishEl) finishEl.textContent = xp + ' XP';
+}
+
+/* ============================== */
+/* 21. INIT                       */
+/* ============================== */
+(function() {
+  initChapter(0);
+  buildSidebarSections();
+  setupReveal();
+  updateNav();
+
+  /* Periodically update finish XP */
+  setInterval(function() {
+    var el = document.getElementById('finishXp');
+    if (el) el.textContent = xp + ' XP';
+  }, 2000);
+})();
+</script>
+</body>
+</html>

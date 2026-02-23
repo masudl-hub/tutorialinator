@@ -423,6 +423,39 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:99999;
 .prompt-block .copy-btn:hover{background:var(--s4);color:var(--t1);border-color:var(--border-h)}
 .prompt-block .copy-btn.copied{background:rgba(139,92,246,0.15);color:var(--purple);border-color:var(--purple)}
 
+/* Video Player */
+.vp-wrap{position:relative;border-radius:14px;overflow:hidden;background:#000;border:1px solid var(--border);box-shadow:var(--shadow-card)}
+.vp-wrap video{width:100%;display:block;cursor:pointer}
+.vp-controls{display:flex;align-items:center;gap:12px;padding:10px 16px;background:rgba(0,0,0,0.85);backdrop-filter:blur(12px);border-top:1px solid rgba(255,255,255,0.06)}
+.vp-btn{background:none;border:none;color:var(--t2);cursor:pointer;padding:4px;display:flex;align-items:center;transition:color 0.2s}
+.vp-btn:hover{color:var(--t1)}
+.vp-btn svg{width:20px;height:20px;fill:currentColor}
+.vp-time{font-family:var(--mono);font-size:12px;color:var(--t3);min-width:90px;text-align:center;user-select:none}
+.vp-progress{flex:1;position:relative;height:6px;background:var(--s4);border-radius:3px;cursor:pointer;overflow:visible}
+.vp-progress-fill{height:100%;background:var(--purple);border-radius:3px;transition:width 0.1s linear;position:relative}
+.vp-progress-fill::after{content:'';position:absolute;right:-5px;top:50%;transform:translateY(-50%);width:12px;height:12px;border-radius:50%;background:var(--t1);box-shadow:0 0 6px rgba(139,92,246,0.5);opacity:0;transition:opacity 0.2s}
+.vp-progress:hover .vp-progress-fill::after{opacity:1}
+.vp-chapters-bar{position:absolute;inset:0;pointer-events:none}
+.vp-chapter-mark{position:absolute;top:0;width:2px;height:100%;background:rgba(255,255,255,0.3);pointer-events:none}
+.vp-vol{width:60px;height:4px;background:var(--s4);border-radius:2px;cursor:pointer;position:relative}
+.vp-vol-fill{height:100%;background:var(--t2);border-radius:2px}
+.vp-speed{font-family:var(--mono);font-size:11px;color:var(--t3);background:var(--s3);border:1px solid var(--border);border-radius:4px;padding:2px 8px;cursor:pointer;transition:all 0.2s}
+.vp-speed:hover{color:var(--t1);border-color:var(--border-h)}
+.vp-fs{margin-left:auto}
+.vp-chapter-list{display:flex;flex-direction:column;gap:4px;margin-top:16px}
+.vp-ch-item{display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:10px;background:var(--s2);border:1px solid var(--border);cursor:pointer;transition:all 0.25s var(--ease);font-size:13px}
+.vp-ch-item:hover{border-color:var(--border-h);background:var(--s3);transform:translateX(4px)}
+.vp-ch-item.active{border-color:var(--purple);background:rgba(139,92,246,0.06)}
+.vp-ch-item.active .vp-ch-num{background:var(--purple);color:#fff;border-color:var(--purple)}
+.vp-ch-num{width:26px;height:26px;border-radius:50%;border:1.5px solid var(--border);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:11px;font-weight:600;color:var(--t4);flex-shrink:0;transition:all 0.25s var(--ease)}
+.vp-ch-info{flex:1;min-width:0}
+.vp-ch-title{font-weight:600;color:var(--t2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.vp-ch-item.active .vp-ch-title{color:var(--t1)}
+.vp-ch-time{font-family:var(--mono);font-size:11px;color:var(--t4);flex-shrink:0}
+.vp-demo-link{display:inline-flex;align-items:center;gap:10px;margin-top:20px;padding:12px 22px;border-radius:10px;border:1px solid rgba(139,92,246,0.3);background:rgba(139,92,246,0.06);color:var(--purple);font-family:var(--mono);font-size:13px;font-weight:600;text-decoration:none;transition:all 0.3s var(--ease)}
+.vp-demo-link:hover{border-color:var(--purple);background:rgba(139,92,246,0.12);transform:translateY(-2px);text-decoration:none}
+.vp-demo-link svg{width:16px;height:16px;fill:currentColor}
+
 </style>
 </head>
 <body>
@@ -1223,6 +1256,47 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:99999;
     <div class="hero-meta-line">21 commits · 10 days · 7 tutorials generated · 4-dimension benchmark</div>
   </div>
 </header>
+
+<div class="div"></div>
+
+<section class="sect" id="s4-demo">
+  <div class="sect-tag">Live Demo</div>
+  <h2>Watch it <span class="accent">work</span></h2>
+  <p class="body">Before diving into how this was built, watch the full workflow in action &mdash; from prompt to published tutorial in ~13 minutes. Use the chapter markers below to jump to any stage of the process.</p>
+
+  <div class="card mt28">
+    <div class="vp-wrap" id="vpWrap">
+      <video id="vpVideo" preload="metadata" playsinline>
+        <source src="public/mcp_demo_tutorial.mp4" type="video/mp4">
+      </video>
+      <div class="vp-controls">
+        <button class="vp-btn" id="vpPlayBtn" onclick="vpTogglePlay()" aria-label="Play/Pause">
+          <svg id="vpPlayIcon" viewBox="0 0 20 20"><path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z"/></svg>
+          <svg id="vpPauseIcon" viewBox="0 0 20 20" style="display:none"><path fill-rule="evenodd" d="M5.5 3a1.5 1.5 0 00-1.5 1.5v11A1.5 1.5 0 005.5 17h1A1.5 1.5 0 008 15.5v-11A1.5 1.5 0 006.5 3h-1zm8 0a1.5 1.5 0 00-1.5 1.5v11a1.5 1.5 0 001.5 1.5h1a1.5 1.5 0 001.5-1.5v-11A1.5 1.5 0 0014.5 3h-1z"/></svg>
+        </button>
+        <div class="vp-time" id="vpTime">0:00 / 13:15</div>
+        <div class="vp-progress" id="vpProgress" onclick="vpSeekClick(event)">
+          <div class="vp-chapters-bar" id="vpChapterMarks"></div>
+          <div class="vp-progress-fill" id="vpFill" style="width:0%"></div>
+        </div>
+        <div class="vp-vol" onclick="vpVolClick(event)">
+          <div class="vp-vol-fill" id="vpVolFill" style="width:80%"></div>
+        </div>
+        <button class="vp-speed" id="vpSpeedBtn" onclick="vpCycleSpeed()">1x</button>
+        <button class="vp-btn vp-fs" onclick="vpFullscreen()" aria-label="Fullscreen">
+          <svg viewBox="0 0 20 20"><path d="M3 4a1 1 0 011-1h3a1 1 0 010 2H5v2a1 1 0 01-2 0V4zm13-1a1 1 0 011 1v3a1 1 0 01-2 0V5h-2a1 1 0 010-2h3zM4 13a1 1 0 011-1 1 1 0 012 0v2h2a1 1 0 010 2H4a1 1 0 01-1-1v-3zm13-1a1 1 0 00-1 1v2h-2a1 1 0 000 2h3a1 1 0 001-1v-3a1 1 0 00-1-1z"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="vp-chapter-list" id="vpChapterList"></div>
+  </div>
+
+  <a class="vp-demo-link" href="public/mcp_demo_tutorial.html" target="_blank" rel="noopener">
+    <svg viewBox="0 0 20 20"><path d="M11 3a1 1 0 100 2h2.586l-6.293 6.293a1 1 0 101.414 1.414L15 6.414V9a1 1 0 102 0V4a1 1 0 00-1-1h-5z"/><path d="M5 5a2 2 0 00-2 2v8a2 2 0 002 2h8a2 2 0 002-2v-3a1 1 0 10-2 0v3H5V7h3a1 1 0 000-2H5z"/></svg>
+    Open the generated tutorial: What is MCP? &amp; Build Your First Server
+  </a>
+</section>
 
 <div class="div"></div>
 
@@ -2493,7 +2567,155 @@ document.addEventListener('DOMContentLoaded', function() {
   setupReveal();
   initChapter(0);
   toast('Welcome — use arrow keys or sidebar to navigate');
+  vpInit();
 });
+
+/* ============================================================
+   VIDEO PLAYER
+   ============================================================ */
+var VP_CHAPTERS = [
+  { time: 0,    title: 'Introduction & Setup' },
+  { time: 38,   title: 'Calling the Skill' },
+  { time: 115,  title: 'Prompt & Mode Detection' },
+  { time: 163,  title: 'Learner Questions (Pedagogy)' },
+  { time: 230,  title: 'Auto-Setup & Environment Check' },
+  { time: 288,  title: 'Research Phase' },
+  { time: 338,  title: 'Agentic Learning Design' },
+  { time: 384,  title: 'Pedagogical Review Agent' },
+  { time: 451,  title: 'Phased HTML Generation' },
+  { time: 537,  title: 'Structure Validation' },
+  { time: 577,  title: 'Playwright E2E Testing' },
+  { time: 646,  title: 'Automated Benchmarking' },
+  { time: 724,  title: 'Output & Publishing' }
+];
+var vpSpeeds = [1, 1.25, 1.5, 2];
+var vpSpeedIdx = 0;
+
+function vpInit() {
+  var vid = document.getElementById('vpVideo');
+  var list = document.getElementById('vpChapterList');
+  var marks = document.getElementById('vpChapterMarks');
+  if (!vid || !list) return;
+
+  vid.addEventListener('loadedmetadata', function() {
+    var dur = vid.duration;
+    VP_CHAPTERS.forEach(function(ch, i) {
+      var pct = (ch.time / dur) * 100;
+      if (i > 0) {
+        var mark = document.createElement('div');
+        mark.className = 'vp-chapter-mark';
+        mark.style.left = pct + '%';
+        marks.appendChild(mark);
+      }
+    });
+    vpUpdateTime();
+  });
+
+  VP_CHAPTERS.forEach(function(ch, i) {
+    var mins = Math.floor(ch.time / 60);
+    var secs = Math.floor(ch.time % 60);
+    var ts = mins + ':' + (secs < 10 ? '0' : '') + secs;
+    var el = document.createElement('div');
+    el.className = 'vp-ch-item' + (i === 0 ? ' active' : '');
+    el.setAttribute('data-idx', i);
+    el.innerHTML = '<div class="vp-ch-num">' + (i + 1) + '</div><div class="vp-ch-info"><div class="vp-ch-title">' + ch.title + '</div></div><div class="vp-ch-time">' + ts + '</div>';
+    el.addEventListener('click', function() { vpSeekTo(ch.time); });
+    list.appendChild(el);
+  });
+
+  vid.addEventListener('timeupdate', function() {
+    vpUpdateTime();
+    vpUpdateProgress();
+    vpUpdateActiveChapter();
+  });
+  vid.addEventListener('play', function() {
+    document.getElementById('vpPlayIcon').style.display = 'none';
+    document.getElementById('vpPauseIcon').style.display = 'block';
+  });
+  vid.addEventListener('pause', function() {
+    document.getElementById('vpPlayIcon').style.display = 'block';
+    document.getElementById('vpPauseIcon').style.display = 'none';
+  });
+  vid.addEventListener('ended', function() {
+    document.getElementById('vpPlayIcon').style.display = 'block';
+    document.getElementById('vpPauseIcon').style.display = 'none';
+  });
+
+  vid.volume = 0.8;
+}
+
+function vpTogglePlay() {
+  var vid = document.getElementById('vpVideo');
+  if (vid.paused) vid.play();
+  else vid.pause();
+}
+
+function vpSeekTo(time) {
+  var vid = document.getElementById('vpVideo');
+  vid.currentTime = time;
+  if (vid.paused) vid.play();
+}
+
+function vpSeekClick(e) {
+  var bar = document.getElementById('vpProgress');
+  var rect = bar.getBoundingClientRect();
+  var pct = (e.clientX - rect.left) / rect.width;
+  var vid = document.getElementById('vpVideo');
+  vid.currentTime = pct * vid.duration;
+}
+
+function vpVolClick(e) {
+  var bar = e.currentTarget;
+  var rect = bar.getBoundingClientRect();
+  var pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+  var vid = document.getElementById('vpVideo');
+  vid.volume = pct;
+  document.getElementById('vpVolFill').style.width = (pct * 100) + '%';
+}
+
+function vpCycleSpeed() {
+  vpSpeedIdx = (vpSpeedIdx + 1) % vpSpeeds.length;
+  var speed = vpSpeeds[vpSpeedIdx];
+  document.getElementById('vpVideo').playbackRate = speed;
+  document.getElementById('vpSpeedBtn').textContent = speed + 'x';
+}
+
+function vpFullscreen() {
+  var wrap = document.getElementById('vpWrap');
+  if (wrap.requestFullscreen) wrap.requestFullscreen();
+  else if (wrap.webkitRequestFullscreen) wrap.webkitRequestFullscreen();
+}
+
+function vpFmt(s) {
+  var m = Math.floor(s / 60);
+  var sec = Math.floor(s % 60);
+  return m + ':' + (sec < 10 ? '0' : '') + sec;
+}
+
+function vpUpdateTime() {
+  var vid = document.getElementById('vpVideo');
+  document.getElementById('vpTime').textContent = vpFmt(vid.currentTime) + ' / ' + vpFmt(vid.duration || 0);
+}
+
+function vpUpdateProgress() {
+  var vid = document.getElementById('vpVideo');
+  var pct = vid.duration ? (vid.currentTime / vid.duration) * 100 : 0;
+  document.getElementById('vpFill').style.width = pct + '%';
+}
+
+function vpUpdateActiveChapter() {
+  var vid = document.getElementById('vpVideo');
+  var t = vid.currentTime;
+  var activeIdx = 0;
+  for (var i = VP_CHAPTERS.length - 1; i >= 0; i--) {
+    if (t >= VP_CHAPTERS[i].time) { activeIdx = i; break; }
+  }
+  var items = document.querySelectorAll('.vp-ch-item');
+  items.forEach(function(el, i) {
+    if (i === activeIdx) el.classList.add('active');
+    else el.classList.remove('active');
+  });
+}
 </script>
 </body>
 </html>
